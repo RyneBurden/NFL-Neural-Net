@@ -247,11 +247,6 @@ def main():
     #     test = np.delete(test, index, axis=1)
     
     testp = predict(test[0,:], model)
-
-    if (testp == 1):
-        print("CHIEFS WIN WE RIGHT")
-    else:
-        print("THE PRICE IS WRONG BITCH")
     
     # ----- BELOW WILL NEED TO BE CHANGED TO SHOW NUMBER CORRECT AND NUMBER INCORRECT ETC. AFTER TESTING EPOCHS AND NETWORK SIZE ----- #
 
