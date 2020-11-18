@@ -1,0 +1,6 @@
+1) ./dataGather.py <year> <pastWeek> <rng seed>
+   a) make pastWeek 17 to scrape a whole season
+
+2) ./dataMaker.py for prediction and training data for the past week
+
+3) ./staleySays.py 
