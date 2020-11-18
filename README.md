@@ -1,4 +1,4 @@
-Staley is a prediction model for NFL games, and it is based on the neural network architecture. This is version 1.
+Staley is a prediction model for NFL games, and it is based on the neural network architecture.
 
 Python is currently the only language used for this project, however it will be overhauled during the offseason to include R as well.
 
