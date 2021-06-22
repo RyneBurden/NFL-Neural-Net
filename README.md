@@ -1,4 +1,4 @@
-Staley is a prediction model for NFL games, and it is based on the neural network architecture. It is trained on games from the last 2 NFL seasons. Through week 10 of the 2020 NFL season, Staley's overall record is 94-52-1. 
+Staley is a prediction model for NFL games, and it is based on the neural network architecture. It is trained on games from the last 2 NFL seasons, and it correctly predicted 62.1% of the 2020-2021 NFL season. 
 
 Python is currently the only language used for this project, however it will be overhauled during the offseason to include R as well.
 
