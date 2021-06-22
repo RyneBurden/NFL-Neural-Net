@@ -11,8 +11,8 @@ Staley is a neural network used to predict NFL games based on datasets containin
 
 ### **Current training/validation loss and accuracy results** 
 
-###**Dependencies** 
-#####*Python Dependencies*
+### **Dependencies** 
+##### *Python Dependencies*
 Matplotlib - used for graphing loss during training
 Pytorch - used for creation and training of the network models
 Beautiful Soup - Used for web scraping and stat gathering
@@ -20,7 +20,7 @@ Openpyxl - Used for spreadsheet manipulation and record-keeping
 Scikit Learn - Used for data preprocessing
 Numpy - Used for data processesing and manipulation
 
-#####*R Dependencies*
+##### *R Dependencies*
 nflfastR - used to gather and synthesize data from the 1999-2020 NFL seasons
 Tidyverse - used to clean data after being gathered</p>
 Reticulate - used to interface R dataframes with the Python neural network
