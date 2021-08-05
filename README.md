@@ -10,7 +10,7 @@ Staley is a neural network used to predict NFL games based on datasets containin
   
   
 ### **2020-2021 Season Results** 
-159-96-1 *or* 62.1% regular season prediction accuracry
+159-96-1 *or* 62.1% regular season prediction accuracy
 
 ### **Current training/validation loss and accuracy results** 
 
