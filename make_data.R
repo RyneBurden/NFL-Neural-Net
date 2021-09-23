@@ -20,19 +20,19 @@ for (current_team_index in 1:nrow(teams)){
       
       # ----- GENERAL DATA POINTS FROM NFLFASTR ----- #
       general_data <- staley_pbp %>% filter(season==current_year, week==current_week, posteam==current_team) %>% select(posteam_type, div_game) %>% unique()
-      total_off_plays <- staley_pbp %>% filter(season==current_year, week==current_week, posteam==current_team, pass==1 | rush==1) %>% count()
-      total_def_plays <- staley_pbp %>% filter(season==current_year, week==current_week, defteam==current_team, pass==1 | rush==1) %>% count()
+      total_off_plays <- staley_pbp %>% filter(season==current_year, week==current_week, posteam==current_team, play_type=="pass" | play_type=="run") %>% count()
+      total_def_plays <- staley_pbp %>% filter(season==current_year, week==current_week, defteam==current_team, play_type=="pass" | play_type=="run") %>% count()
       
       # ----- OFFENSIVE EPA/GAME  AND FIRST DOWN RATE----- #
-      current_off_rush_epa <- staley_pbp %>% filter(season==current_year, week==current_week, posteam==current_team, !is.na(epa), penalty==0, rush==1) %>% summarise(OFF_RUSH_EPA=mean(epa))
-      current_off_pass_epa <- staley_pbp %>% filter(season==current_year, week==current_week, posteam==current_team, !is.na(epa), penalty==0, pass==1) %>% summarise(OFF_PASS_EPA=mean(epa))
-      current_first_downs_for <- staley_pbp %>% filter(season==current_year, week==current_week, posteam==current_team, first_down==1, pass==1 | rush==1) %>% count()
+      current_off_rush_epa <- staley_pbp %>% filter(season==current_year, week==current_week, posteam==current_team, !is.na(epa), penalty==0, play_type=="run") %>% summarise(OFF_RUSH_EPA=mean(epa))
+      current_off_pass_epa <- staley_pbp %>% filter(season==current_year, week==current_week, posteam==current_team, !is.na(epa), penalty==0, play_type=="pass") %>% summarise(OFF_PASS_EPA=mean(epa))
+      current_first_downs_for <- staley_pbp %>% filter(season==current_year, week==current_week, posteam==current_team, first_down==1, play_type=="pass" | play_type=="run") %>% count()
       current_off_fdr <- current_first_downs_for / total_off_plays
       
       # ----- DEFENSIVE EPA/GAME ----- #
-      current_def_rush_epa <- staley_pbp %>% filter(season==current_year, week==current_week, defteam==current_team, !is.na(epa), penalty==0, rush==1) %>% summarise(DEF_RUSH_EPA=mean(epa))
-      current_def_pass_epa <- staley_pbp %>% filter(season==current_year, week==current_week, defteam==current_team, !is.na(epa), penalty==0, pass==1) %>% summarise(DEF_PASS_EPA=mean(epa))
-      current_first_downs_allowed <- staley_pbp %>% filter(season==current_year, week==current_week, defteam==current_team, first_down==1, pass==1 | rush==1) %>% count()
+      current_def_rush_epa <- staley_pbp %>% filter(season==current_year, week==current_week, defteam==current_team, !is.na(epa), penalty==0, play_type=="run") %>% summarise(DEF_RUSH_EPA=mean(epa))
+      current_def_pass_epa <- staley_pbp %>% filter(season==current_year, week==current_week, defteam==current_team, !is.na(epa), penalty==0, play_type=="pass") %>% summarise(DEF_PASS_EPA=mean(epa))
+      current_first_downs_allowed <- staley_pbp %>% filter(season==current_year, week==current_week, defteam==current_team, first_down==1, play_type=="pass" | play_type=="run") %>% count()
       current_def_fdr <- current_first_downs_allowed / total_def_plays
       
       # ----- TURNOVER DIFFERENTIAL ----- #
@@ -48,11 +48,11 @@ for (current_team_index in 1:nrow(teams)){
       
       # ----- EXPLOSIVE PLAY RATE ----- #
       ## get offensive explosive plays
-      current_off_exp_plays <- staley_pbp %>% filter(season==current_year, week==current_week, posteam==current_team, yards_gained>=20, interception==0 & fumble_lost==0, penalty==0, pass==1 | rush==1) %>% count()
+      current_off_exp_plays <- staley_pbp %>% filter(season==current_year, week==current_week, posteam==current_team, yards_gained>=15, interception==0 & fumble_lost==0, penalty==0, play_type=="pass" | play_type=="run") %>% count()
       current_off_exp_play_rate <- current_off_exp_plays / total_off_plays
       
       ## get defensive explosive plays allowed
-      current_def_exp_plays <- staley_pbp %>% filter(season==current_year, week==current_week, defteam==current_team, yards_gained>=20, interception==0 & fumble_lost==0, penalty==0, pass==1 | rush==1) %>% count()
+      current_def_exp_plays <- staley_pbp %>% filter(season==current_year, week==current_week, defteam==current_team, yards_gained>=15, interception==0 & fumble_lost==0, penalty==0, play_type=="pass" | play_type=="run") %>% count()
       current_def_exp_play_rate <- current_def_exp_plays / total_def_plays
       
       ## Subtract the two values for the differential

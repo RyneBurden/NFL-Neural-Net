@@ -1,7 +1,7 @@
 num_weeks <- 17
 # get year range from data so if make_data changes, it won't affec this
 years <- staley_data %>% group_by(SEASON) %>%  filter(HOA!="BYE") %>% select(SEASON) %>% unique()
-begin_year <- zyears[1,]$SEASON
+begin_year <- years[1,]$SEASON
 end_year <- years[nrow(years),]$SEASON
 
 # Data frames to hold our training data

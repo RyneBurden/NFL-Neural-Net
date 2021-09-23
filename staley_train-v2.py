@@ -17,14 +17,12 @@ class Network(nn.Module):
     def __init__(self):
         super().__init__()
 
-        #layers = [29, 22, 16, 12, 6, 2]
-        #layers = [29, 20, 13, 7, 2]
-        layers = [29, 26, 20, 15, 10, 5, 2]
-
+        #layers = [29, 26, 20, 15, 10, 5, 2] # - original
+        layers = [29, 34, 42, 54, 68, 84, 50, 35, 25, 18, 12, 5, 2]
 
         # Inputs layer 
         self.input_layer = nn.Linear(layers[0], layers[1])
-        self.input_activation = nn.LeakyReLU()
+        self.input_activation = nn.Tanh()
         self.input_layer.bias = torch.nn.Parameter(torch.Tensor([.01 for i in range(layers[1])]))
         nn.init.kaiming_uniform_(self.input_layer.weight)
 
@@ -52,8 +50,39 @@ class Network(nn.Module):
         nn.init.kaiming_uniform_(self.hidden_4.weight)
 
         self.hidden_5 = nn.Linear(layers[5], layers[6])
-        self.hidden_5_activation = nn.Softmax(dim=0)
-        self.hidden_5.bias = torch.nn.Parameter(torch.Tensor([0 for i in range(layers[6])]))
+        self.hidden_5_activation = nn.LeakyReLU()
+        self.hidden_5.bias = torch.nn.Parameter(torch.Tensor([.01 for i in range(layers[6])]))
+        nn.init.kaiming_uniform_(self.hidden_5.weight)
+
+        self.hidden_6 = nn.Linear(layers[6], layers[7])
+        self.hidden_6_activation = nn.LeakyReLU()
+        self.hidden_6.bias = torch.nn.Parameter(torch.Tensor([.01 for i in range(layers[7])]))
+        nn.init.kaiming_uniform_(self.hidden_6.weight)
+
+        self.hidden_7 = nn.Linear(layers[7], layers[8])
+        self.hidden_7_activation = nn.LeakyReLU()
+        self.hidden_7.bias = torch.nn.Parameter(torch.Tensor([.01 for i in range(layers[8])]))
+        nn.init.kaiming_uniform_(self.hidden_7.weight)
+
+        self.hidden_8 = nn.Linear(layers[8], layers[9])
+        self.hidden_8_activation = nn.LeakyReLU()
+        self.hidden_8.bias = torch.nn.Parameter(torch.Tensor([.01 for i in range(layers[9])]))
+        nn.init.kaiming_uniform_(self.hidden_8.weight)
+
+        self.hidden_9 = nn.Linear(layers[9], layers[10])
+        self.hidden_9_activation = nn.LeakyReLU()
+        self.hidden_9.bias = torch.nn.Parameter(torch.Tensor([.01 for i in range(layers[10])]))
+        nn.init.kaiming_uniform_(self.hidden_9.weight)
+
+        self.hidden_10 = nn.Linear(layers[10], layers[11])
+        self.hidden_10_activation = nn.LeakyReLU()
+        self.hidden_10.bias = torch.nn.Parameter(torch.Tensor([.01 for i in range(layers[11])]))
+        nn.init.kaiming_uniform_(self.hidden_10.weight)
+
+        self.hidden_11 = nn.Linear(layers[11], layers[12], bias=False)
+        self.hidden_11_activation = nn.Softmax(dim=0)
+        #self.hidden_11.bias = torch.nn.Parameter(torch.Tensor([0 for i in range(layers[12])]))
+        nn.init.kaiming_uniform_(self.hidden_7.weight)
 
     def forward(self, x):
 
@@ -70,6 +99,18 @@ class Network(nn.Module):
         x = self.hidden_4_activation(x)
         x = self.hidden_5(x)
         x = self.hidden_5_activation(x)
+        x = self.hidden_6(x)
+        x = self.hidden_6_activation(x)
+        x = self.hidden_7(x)
+        x = self.hidden_7_activation(x)
+        x = self.hidden_8(x)
+        x = self.hidden_8_activation(x)
+        x = self.hidden_9(x)
+        x = self.hidden_9_activation(x)
+        x = self.hidden_10(x)
+        x = self.hidden_10_activation(x)
+        x = self.hidden_11(x)
+        x = self.hidden_11_activation(x)
 
         return x
 
@@ -79,13 +120,10 @@ def train_network(network, training_data, valid_data, num_epochs, learning_rate,
         my_device = "cuda"
     else:
         my_device = "cpu"
-
+        
     my_device = "cpu"
 
-    # min-max scaler for scaling batch data
-    #scaler = preprocessing.StandardScaler()
-    #training_data = pd.DataFrame(scaler.fit_transform(training_data.to_numpy()))
-    #valid_data = pd.DataFrame(scaler.fit_transform(valid_data.to_numpy()))
+    network = network.to(my_device)
 
     # Batch size variable
     batch_size = 16
@@ -105,9 +143,6 @@ def train_network(network, training_data, valid_data, num_epochs, learning_rate,
 
     # Learning Rate Scheduler
     optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
-    #optimizer = torch.optim.SGD(network.parameters(), lr = learning_rate, momentum = 0.8, nesterov = True)
-    #optimizer = torch.optim.Adagrad(network.parameters(), lr = learning_rate)
-    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode = "min", verbose = True, factor = 0.1, cooldown = 10)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(num_epochs / 3), int(num_epochs / 1.5)], gamma=.01)
 
     # Enumerate epochs
@@ -136,7 +171,9 @@ def train_network(network, training_data, valid_data, num_epochs, learning_rate,
             current_batch_pts_diff = current_batch.values[:, -1]
             current_batch = current_batch.values[:, :-1]
             current_batch_scaled = scaler.fit_transform(current_batch)
-            # print(current_batch.shape)
+
+            current_batch_scaled = torch.Tensor(current_batch_scaled)
+            current_batch_scaled = current_batch_scaled.to(my_device)
 
             # Enumerate data set
             for current_row in range(batch_size):
@@ -152,13 +189,16 @@ def train_network(network, training_data, valid_data, num_epochs, learning_rate,
                     expected_value = 1
 
                 # Make newRow into a tensor
-                current_data = torch.Tensor(current_data)
+                #current_data = torch.Tensor(current_data)
+                current_data = current_data.to(my_device)
 
                 # Clear optimizer gradients
                 optimizer.zero_grad()
 
                 # Compute model output
                 outputs = network.forward(current_data)
+                if my_device == "cuda":
+                    outputs = outputs.to('cpu')
                 train_batch_outputs[batch_counter] = outputs
 
                 # Expected value from original data using a one-hot encoding
@@ -208,7 +248,6 @@ def train_network(network, training_data, valid_data, num_epochs, learning_rate,
             current_batch = valid_data.iloc[batch_index:(batch_index + 16)]
             current_batch = current_batch.values[:, :-1]
             current_batch_scaled = scaler.fit_transform(current_batch)
-            # print(current_batch.shape)
 
             # Enumerate data set
             for current_row in range(batch_size):
@@ -225,9 +264,12 @@ def train_network(network, training_data, valid_data, num_epochs, learning_rate,
 
                 # Make newRow into a tensor
                 current_data = torch.Tensor(current_data)
+                current_data = current_data.to(my_device)
 
                 # Compute model output
                 outputs = network.forward(current_data)
+                if my_device == "cuda":
+                    outputs = outputs.to('cpu')
                 valid_batch_outputs[batch_counter] = outputs
 
                 # Expected value from original data using a one-hot encoding
@@ -283,8 +325,25 @@ def predict(row, model):
     # Return result of prediction and probability of that result
     return result
 
+def predict_2(row, model):
+
+    # make prediction
+    yhat = model.forward(torch.Tensor(row))
+
+    # Retrieve numpy array
+    yhat = yhat.detach().numpy()
+
+    # Variable to hold the result - 0 for away win 1 for home win
+    result = np.argmax(yhat)
+
+    # Return result of prediction and probability of that result
+    return yhat
+
 def net_main(data, learning_rate, number_epochs):
 
+    initial_scaler = preprocessing.RobustScaler()
+    data = initial_scaler.fit_transform(data)
+    data = pd.DataFrame(data)
     data = shuffle(data)
 
     training_index = data.shape[0] - 512
@@ -295,9 +354,9 @@ def net_main(data, learning_rate, number_epochs):
     valid_data = data.iloc[training_index:valid_index]
     testing_data = data.iloc[valid_index:testing_index]
 
-    #scaler = preprocessing.StandardScaler()
+    # Scaler to pass to train_network
+    # Scales the data to [-1, 1] after batching
     scaler = preprocessing.MaxAbsScaler()
-    #testing_data = pd.DataFrame(scaler.fit_transform(testing_data.to_numpy()))
 
     staley = Network()
 
@@ -344,10 +403,10 @@ def net_main(data, learning_rate, number_epochs):
 
         print(str(round((correct_testing / testing_data.shape[0]) * 100, 2)) + "% of testing data correctly predicted")
 
-    training_loss_smoothed = savgol_filter(training_loss, 15, 2).tolist()
-    valid_loss_smoothed = savgol_filter(valid_loss, 15, 2).tolist()
-    training_accuracy_smoothed = savgol_filter(training_accuracy, 15, 2).tolist()
-    valid_accuracy_smoothed = savgol_filter(valid_accuracy, 15, 2).tolist()
+    training_loss_smoothed = savgol_filter(training_loss, 5, 2).tolist()
+    valid_loss_smoothed = savgol_filter(valid_loss, 5, 2).tolist()
+    training_accuracy_smoothed = savgol_filter(training_accuracy, 5, 2).tolist()
+    valid_accuracy_smoothed = savgol_filter(valid_accuracy, 5, 2).tolist()
 
     plt.plot(epoch_list, training_loss, linewidth = 0.25, linestyle='dashed', color='r', alpha=0.95)
     plt.plot(epoch_list, training_loss_smoothed, linewidth=1.0, color='r', label = "Training Loss")
@@ -476,7 +535,7 @@ def test_staley(testing_data):
     model.load_state_dict(staley_test['state_dict'])
     model.eval()
 
-    scaler = preprocessing.MaxAbsScaler()
+    scaler = preprocessing.MinMaxScaler()
 
     correct_testing = 0
     batch_index = 0
@@ -512,3 +571,26 @@ def test_staley(testing_data):
             batch_index = batch_index + 16
 
         print(str(round((correct_testing / testing_data.shape[0]) * 100, 2)) + "% of testing data correctly predicted")
+
+def make_predictions(data, model_number):
+
+    # Load network and state dict
+    staley = Network()
+    state = torch.load('C:/Users/Ryne/Documents/R Projects and Files/Staley_2.0/13 Layer Networks/.000015LR/50 epochs/' + str(model_number) + '.staley')
+    staley.load_state_dict(state['state_dict'])
+    staley.eval()
+
+    predictions = list()
+
+    # Create scaler and list for predictions, scale data
+    scaler = preprocessing.MaxAbsScaler()
+    data = scaler.fit_transform(data)
+
+    # Go through data and make predictions, add them to predictions
+    for x in range(data.shape[0]):
+        row = data[x, :]
+        current_prediction = predict_2(row, staley)
+        predictions.append(current_prediction)
+
+    return pd.DataFrame(predictions, columns=["AWAY_WIN", "HOME_WIN"])
+
