@@ -28,6 +28,6 @@ Numpy - Used for data processesing and manipulation
 nflfastR - used to gather and synthesize data from the 1999-2020 NFL seasons  
 Tidyverse - used to clean data after being gathered  
 Reticulate - used to interface R dataframes with the Python neural network  
-
+Glue - use for tidying print statements based on input variables
 
 ### **Twitter: @BearlyAnalytics**
