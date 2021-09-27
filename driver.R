@@ -2,32 +2,36 @@
 reticulate::use_virtualenv("C:/Users/Ryne/Documents/R Projects and Files/Staley_2.0/virtualenvs/staley")
 reticulate::py_run_file("staley_train-v2.py")
 
-# Read in current week
+# Read in current data variables for logic processing
 current_season <- readline("What season are we looking at right now? ")
 current_week <- readline(glue("What week of the ", current_season ," season should I analyze? "))
 to_write <- readline("Should I write to the excel file when I finish? ")
 current_week = as.integer(current_week)
 current_season <- as.integer(current_season)
-
 current_pbp <- nflfastR::load_pbp(current_season)
 
+# NFL teams are relatively consistent from season to season
+#   therefore using data from last season helps eliminate the small sample size problem
+#   that affects data averaging until about week 8 should not negatively impact predictions and data integrity.
+# Example: week 4 of the 2021 season will use the first 3 weeks from 2021
+#   as well as the last 5 weeks of the 2020 season
 if (as.integer(current_week) < 8) {
     last_season_pbp <- nflfastR::load_pbp(as.integer(current_season) - 1)
     last_season_pbp <- last_season_pbp %>% filter(week > (17 - (8 - as.integer(current_week))) & week < 18)
     current_pbp <- current_pbp %>% rbind(last_season_pbp)
 }
 
-
+# Make data frames for looping
 games = nfl_schedule %>% filter(week==current_week, season==current_season)
 current_week_data <- data.frame()
 predictions <- data.frame()
 current_week_predictions <- data.frame()
 current_week_picks <- data.frame(matrix(ncol = 7))
 
+# Sopranos reference
 writeLines("Bada bing I'm on it boss")
 
-#current_pbp <- current_pbp %>% filter(week != 1)
-
+# Loop through all games and 
 for(current_game in 1:nrow(games)) {
     
     # Get the current home and away teams
@@ -36,11 +40,12 @@ for(current_game in 1:nrow(games)) {
     div_game = games[current_game,] %>% select(div_game)
     
     # make variables for each data point needed away and home
-    # calculate each variable using a for loop and 2021_pbp
+    # calculate each variable using a for loop and current_pbp
     # NOTE: first 2 weeks will need to use 2019 stats
     
     if (current_week == 1) {
         
+        # Load previous season data
         current_pbp <- nflfastR::load_pbp(as.integer(current_season) - 1)
         
         # Rolling week so the remove statements below work
@@ -509,15 +514,17 @@ for(current_game in 1:nrow(games)) {
     #     
     # }
     
+    # Append current_game_data to current_week_data
+    # This includes all stats needed for predictions (29 data points, 14 per team, 1 for divisional game)
     current_game_data <- append(current_away_data, current_home_data)
     current_week_data <- rbind(current_week_data, current_game_data)
     
 }
 
-# Cycle through 
-for (y in 1:10) {
+# Cycle through all models
+for (model_number in 1:10) {
     #print(glue("---------- Model ", y, " predictions ----------", "\n\n"))
-    predictions <- reticulate::py$make_predictions(reticulate::r_to_py(current_week_data), y)
+    predictions <- reticulate::py$make_predictions(reticulate::r_to_py(current_week_data), model_number)
     
     for (x in 1:nrow(predictions)) {
         
@@ -525,17 +532,13 @@ for (y in 1:10) {
         current_home = games[x,] %>% select(home_team)
         
         current_prediction = predictions[x,]
-        # if (current_prediction[1] < current_prediction[2]) {
-        #     print(glue(" ", current_away$away_team, " @ ", current_home$home_team, " -- ", current_home$home_team, " wins at home with ", round(as.double(current_prediction[2]) * 100, 2), "% confidence"))
-        # } else if (current_prediction[1] > current_prediction[2]) {
-        #     print(glue(" ", current_away$away_team, " @ ", current_home$home_team, " -- ", current_away$away_team, " wins on the road with ", round(as.double(current_prediction[1]) * 100, 2), "% confidence"))
-        # }
+        
     }
-    writeLines("\n")
     
     current_week_predictions <- rbind(current_week_predictions, predictions)
 }
 
+# Printing loop to display the results of each game
 print(glue("---------- Majority winners and average confidence ratings for week ", current_week, " ", current_season , " ----------", "\n\n"))
 for (x in 1:nrow(games)) {
 
@@ -566,6 +569,7 @@ for (x in 1:nrow(games)) {
             }
         }
         else {
+            # This logic took me a bit to figure out, but it adds and averages the averages for each game
             if (current_week_predictions[((y-1)*nrow(games))+x, 1] > current_week_predictions[((y-1)*nrow(games))+x, 2]) {
                 current_away_wins = current_away_wins + 1
                 current_away_confidence = current_away_confidence + (current_week_predictions[((y-1)*nrow(games))+x, 1])
@@ -579,6 +583,7 @@ for (x in 1:nrow(games)) {
         
     }
     
+    # This conditional prints the winner and makes the current_pick data frame which will be put into current_week_picks before being exported to excel
     if (current_away_confidence > current_home_confidence) {
         print(glue(" ", current_away$away_team, " @ ", current_home$home_team, " -- ", current_away$away_team, " has (", current_away_wins, "/10) predicted wins on the road with ", round((current_away_confidence * 100) / 10, 2), "% average confidence"))
         current_pick <- data.frame(
@@ -601,32 +606,9 @@ for (x in 1:nrow(games)) {
             HOME_TEAM_CONFIDENCE <- round((current_home_confidence * 100) / 10, 2),
             WINNER <- current_home$home_team
         )
-    } else if (current_away_wins == current_home_wins) {
-        if (current_away_confidence / 10 > current_home_confidence / 10) {
-            print(glue(" ", current_away$away_team, " @ ", current_home$home_team, " -- ", current_away$away_team, " has (", current_away_wins, "/10) predicted wins on the road with ", round((current_away_confidence * 100) / 10, 2), "% average confidence"))
-            current_pick <- data.frame(
-                AWAY_TEAM <- current_away$away_team,
-                AWAY_WIN_COUNT <- current_away_wins,
-                AWAY_WIN <- round((current_away_confidence * 100) / 10, 2),
-                HOME_TEAM <- current_home$home_team,
-                HOME_WIN_COUNT <- current_home_wins,
-                HOME_WIN <- round((current_home_confidence * 100) / 10, 2),
-                WINNER <- current_away$away_team
-            )
-        } else {
-            print(glue(" ", current_away$away_team, " @ ", current_home$home_team, " -- ", current_home$home_team, " has (", current_home_wins, "/10) predicted wins at home with ", round((current_home_confidence * 100) / 10, 2), "% average confidence"))
-            current_pick <- data.frame(
-                AWAY_TEAM <- current_away$away_team,
-                AWAY_TEAM_WINS <- current_away_wins,
-                AWAY_TEAM_CONFIDENCE <- round((current_away_confidence * 100) / 10, 2),
-                HOME_TEAM <- current_home$home_team,
-                HOME_TEAM_WINS <- current_home_wins,
-                HOME_TEAM_CONFIDENCE <- round((current_home_confidence * 100) / 10, 2),
-                WINNER <- current_home$home_team
-            )
-        }
     }
     
+    # Change colnames for uniformity and add the current pick to the current_week_picks data frame
     colnames(current_pick) <- c("AWAY_TEAM","AWAY_WIN_COUNT","AWAY_WIN_CONFIDENCE","HOME_TEAM", "HOME_WIN_COUNT", "HOME_WIN_CONFIDENCE", "WINNER")
     colnames(current_week_picks) <- c("AWAY_TEAM","AWAY_WIN_COUNT","AWAY_WIN_CONFIDENCE","HOME_TEAM", "HOME_WIN_COUNT", "HOME_WIN_CONFIDENCE", "WINNER")
     current_week_picks <- rbind(current_week_picks, current_pick)
@@ -642,6 +624,7 @@ if (to_write == "yes" | to_write == "y"){
     print(glue("\n\nExcel sheet created and written to file for week ", current_week, " of the ", current_season, " season"))
 }
 
+# Remove variables to keep R session clean
 remove(current_pick)
 remove(current_away_confidence)
 remove(current_away_wins)
