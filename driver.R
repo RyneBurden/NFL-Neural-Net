@@ -10,17 +10,6 @@ current_week = as.integer(current_week)
 current_season <- as.integer(current_season)
 current_pbp <- nflfastR::load_pbp(current_season)
 
-# NFL teams are relatively consistent from season to season
-#   therefore using data from last season helps eliminate the small sample size problem
-#   that affects data averaging until about week 8 should not negatively impact predictions and data integrity.
-# Example: week 4 of the 2021 season will use the first 3 weeks from 2021
-#   as well as the last 5 weeks of the 2020 season
-if (as.integer(current_week) < 8) {
-    last_season_pbp <- nflfastR::load_pbp(as.integer(current_season) - 1)
-    last_season_pbp <- last_season_pbp %>% filter(week > (17 - (8 - as.integer(current_week))) & week < 18)
-    current_pbp <- current_pbp %>% rbind(last_season_pbp)
-}
-
 # Make data frames for looping
 games = nfl_schedule %>% filter(week==current_week, season==current_season)
 current_week_data <- data.frame()
@@ -229,57 +218,57 @@ for(current_game in 1:nrow(games)) {
             DEF_RUSH_EPA <- current_away_def_rush_epa$DEF_RUSH_EPA / (current_week - 1),
             DEF_PASS_EPA <- current_away_def_pass_epa$DEF_PASS_EPA / (current_week - 1),
             DEF_FDR <- current_away_def_fdr$n / (current_week - 1),
-            OFF_TO <- current_away_giveaways$n / (current_week - 1),
-            DEF_TO <- current_away_takeaways$n / (current_week - 1),
+            OFF_TO <- current_away_giveaways$n,
+            DEF_TO <- current_away_takeaways$n,
             OFF_EXP_RATE <- current_away_off_exp_play_rate$n / (current_week - 1),
             DEF_EXP_RATE <- current_away_def_exp_play_rate$n / (current_week - 1),
-            PENS <- current_away_total_penalties$n / (current_week - 1),
-            PEN_YDS <- current_away_total_penalty_yds$Off_Pen_Yds / (current_week - 1),
-            OL_METRIC <- current_away_off_line_metric$n / (current_week - 1),
-            DL_METRIC <- current_away_def_line_metric$n / (current_week - 1)
+            PENS <- current_away_total_penalties$n,
+            PEN_YDS <- current_away_total_penalty_yds$Off_Pen_Yds,
+            OL_METRIC <- current_away_off_line_metric$n,
+            DL_METRIC <- current_away_def_line_metric$n
         )
         
         ################### HOME STATS ###################
         # ----- GENERAL DATA POINTS FROM NFLFASTR ----- #
-        home_general_data <- current_pbp %>% filter(posteam==current_home$home_team) %>% select(posteam_type, div_game) %>% unique()
-        total_home_off_plays <- current_pbp %>% filter(posteam==current_home$home_team, play_type=="pass" | play_type=="run") %>% count()
-        total_home_def_plays <- current_pbp %>% filter(defteam==current_home$home_team, play_type=="pass" | play_type=="run") %>% count()
+        home_general_data <- current_pbp %>% filter(week < current_week, posteam==current_home$home_team) %>% select(posteam_type, div_game) %>% unique()
+        total_home_off_plays <- current_pbp %>% filter(week < current_week, posteam==current_home$home_team, play_type=="pass" | play_type=="run") %>% count()
+        total_home_def_plays <- current_pbp %>% filter(week < current_week, defteam==current_home$home_team, play_type=="pass" | play_type=="run") %>% count()
         
         # ----- OFFENSIVE EPA/GAME AND FIRST DOWN RATE----- #
-        current_home_off_rush_epa <- current_pbp %>% filter(posteam==current_home$home_team, !is.na(epa), penalty==0, play_type=="run") %>% summarise(OFF_RUSH_EPA=mean(epa))
-        current_home_off_pass_epa <- current_pbp %>% filter(posteam==current_home$home_team, !is.na(epa), penalty==0, play_type=="pass") %>% summarise(OFF_PASS_EPA=mean(epa))
-        current_home_first_downs_for <- current_pbp %>% filter(posteam==current_home$home_team, first_down==1, play_type=="pass" | play_type=="run") %>% count()
+        current_home_off_rush_epa <- current_pbp %>% filter(week < current_week, posteam==current_home$home_team, !is.na(epa), penalty==0, play_type=="run") %>% summarise(OFF_RUSH_EPA=mean(epa))
+        current_home_off_pass_epa <- current_pbp %>% filter(week < current_week, posteam==current_home$home_team, !is.na(epa), penalty==0, play_type=="pass") %>% summarise(OFF_PASS_EPA=mean(epa))
+        current_home_first_downs_for <- current_pbp %>% filter(week < current_week, posteam==current_home$home_team, first_down==1, play_type=="pass" | play_type=="run") %>% count()
         current_home_off_fdr <- current_home_first_downs_for / total_home_off_plays
         
         # ----- DEFENSIVE EPA/GAME AND FIRST DOWN RATE ----- #
-        current_home_def_rush_epa <- current_pbp %>% filter(defteam==current_home$home_team, !is.na(epa), penalty==0, play_type=="run") %>% summarise(DEF_RUSH_EPA=mean(epa))
-        current_home_def_pass_epa <- current_pbp %>% filter(defteam==current_home$home_team, !is.na(epa), penalty==0, play_type=="pass") %>% summarise(DEF_PASS_EPA=mean(epa))
-        current_home_first_downs_allowed <- current_pbp %>% filter(defteam==current_home$home_team, first_down==1, play_type=="pass" | play_type=="run") %>% count()
+        current_home_def_rush_epa <- current_pbp %>% filter(week < current_week, defteam==current_home$home_team, !is.na(epa), penalty==0, play_type=="run") %>% summarise(DEF_RUSH_EPA=mean(epa))
+        current_home_def_pass_epa <- current_pbp %>% filter(week < current_week, defteam==current_home$home_team, !is.na(epa), penalty==0, play_type=="pass") %>% summarise(DEF_PASS_EPA=mean(epa))
+        current_home_first_downs_allowed <- current_pbp %>% filter(week < current_week, defteam==current_home$home_team, first_down==1, play_type=="pass" | play_type=="run") %>% count()
         current_home_def_fdr <- current_home_first_downs_allowed / total_home_def_plays
         
         # ----- TURNOVER DATA ----- #
-        current_home_giveaways <- (current_pbp %>% filter(posteam==current_home$home_team, fumble_lost==1 | interception==1) %>% count()) / (current_week - 1)
-        current_home_takeaways <- (current_pbp %>% filter(defteam==current_home$home_team, fumble_lost==1 | interception==1) %>% count()) / (current_week - 1)
+        current_home_giveaways <- (current_pbp %>% filter(week < current_week, posteam==current_home$home_team, fumble_lost==1 | interception==1) %>% count()) / (current_week - 1)
+        current_home_takeaways <- (current_pbp %>% filter(week < current_week, defteam==current_home$home_team, fumble_lost==1 | interception==1) %>% count()) / (current_week - 1)
         
         # ----- EXPLOSIVE PLAY RATE ----- #
-        current_home_off_exp_plays <- current_pbp %>% filter(posteam==current_home$home_team, yards_gained>=15, interception==0 & fumble_lost==0, penalty==0, play_type=="pass" | play_type=="run") %>% count()
+        current_home_off_exp_plays <- current_pbp %>% filter(week < current_week, posteam==current_home$home_team, yards_gained>=15, interception==0 & fumble_lost==0, penalty==0, play_type=="pass" | play_type=="run") %>% count()
         current_home_off_exp_play_rate <- current_home_off_exp_plays / total_home_off_plays
-        current_home_def_exp_plays <- current_pbp %>% filter(defteam==current_home$home_team, yards_gained>=15, interception==0 & fumble_lost==0, penalty==0, play_type=="pass" | play_type=="run") %>% count()
+        current_home_def_exp_plays <- current_pbp %>% filter(week < current_week, defteam==current_home$home_team, yards_gained>=15, interception==0 & fumble_lost==0, penalty==0, play_type=="pass" | play_type=="run") %>% count()
         current_home_def_exp_play_rate <- current_home_def_exp_plays / total_home_def_plays
         
         # ----- PENALTIES & PENALTY YARDS ----- #
-        current_home_off_penalties <- current_pbp %>% filter(posteam==current_home$home_team, penalty==1 & penalty_team==current_home$home_team) %>% count()
-        current_home_off_penalty_yds <- current_pbp %>% filter(posteam==current_home$home_team, penalty==1 & penalty_team==current_home$home_team) %>% summarise(Off_Pen_Yds=sum(penalty_yards))
-        current_home_def_penalties <- current_pbp %>% filter(defteam==current_home$home_team, penalty==1 & penalty_team==current_home$home_team) %>% count()
-        current_home_def_penalty_yds <- current_pbp %>% filter(defteam==current_home$home_team, penalty==1 & penalty_team==current_home$home_team) %>% summarise(Def_Pen_Yds=sum(penalty_yards))
+        current_home_off_penalties <- current_pbp %>% filter(week < current_week, posteam==current_home$home_team, penalty==1 & penalty_team==current_home$home_team) %>% count()
+        current_home_off_penalty_yds <- current_pbp %>% filter(week < current_week, posteam==current_home$home_team, penalty==1 & penalty_team==current_home$home_team) %>% summarise(Off_Pen_Yds=sum(penalty_yards))
+        current_home_def_penalties <- current_pbp %>% filter(week < current_week, defteam==current_home$home_team, penalty==1 & penalty_team==current_home$home_team) %>% count()
+        current_home_def_penalty_yds <- current_pbp %>% filter(week < current_week, defteam==current_home$home_team, penalty==1 & penalty_team==current_home$home_team) %>% summarise(Def_Pen_Yds=sum(penalty_yards))
         current_home_total_penalties <- (current_home_off_penalties + current_home_def_penalties) / (current_week - 1)
         current_home_total_penalty_yds <- (current_home_off_penalty_yds + current_home_def_penalty_yds) / (current_week - 1)
         
         # ----- QB HIT + SACK DIFFERENTIAL ----- #
         # A positive value means the defense produces more QB Hits and Sacks than are allowed on offense
         # This seems like a decent measure of offensive/defensive line play that can be inferred from the nflfastR data sets
-        current_home_off_line_metric <- (current_pbp %>% filter(posteam==current_home$home_team, qb_hit==1 | sack==1) %>% count()) / (current_week - 1)
-        current_home_def_line_metric <- (current_pbp %>% filter(defteam==current_home$home_team, qb_hit==1 | sack==1) %>% count()) / (current_week - 1)
+        current_home_off_line_metric <- (current_pbp %>% filter(week < current_week, posteam==current_home$home_team, qb_hit==1 | sack==1) %>% count()) / (current_week - 1)
+        current_home_def_line_metric <- (current_pbp %>% filter(week < current_week, defteam==current_home$home_team, qb_hit==1 | sack==1) %>% count()) / (current_week - 1)
         
         # Make home data frame
         current_home_data <- data.frame(
@@ -289,231 +278,19 @@ for(current_game in 1:nrow(games)) {
             DEF_RUSH_EPA <- current_home_def_rush_epa$DEF_RUSH_EPA / (current_week - 1),
             DEF_PASS_EPA <- current_home_def_pass_epa$DEF_PASS_EPA / (current_week - 1),
             DEF_FDR <- current_home_def_fdr$n / (current_week - 1),
-            OFF_TO <- current_home_giveaways$n / (current_week - 1),
-            DEF_TO <- current_home_takeaways$n / (current_week - 1),
+            OFF_TO <- current_home_giveaways$n,
+            DEF_TO <- current_home_takeaways$n,
             OFF_EXP_RATE <- current_home_off_exp_play_rate$n / (current_week - 1),
             DEF_EXP_RATE <- current_home_def_exp_play_rate$n / (current_week - 1),
-            PENS <- current_home_total_penalties$n / (current_week - 1),
-            PEN_YDS <- current_home_total_penalty_yds$Off_Pen_Yds / (current_week - 1),
-            OL_METRIC <- current_home_off_line_metric$n / (current_week - 1),
-            DL_METRIC <- current_home_def_line_metric$n / (current_week - 1),
+            PENS <- current_home_total_penalties$n,
+            PEN_YDS <- current_home_total_penalty_yds$Off_Pen_Yds,
+            OL_METRIC <- current_home_off_line_metric$n,
+            DL_METRIC <- current_home_def_line_metric$n,
             DIV_GAME <- div_game
         )
         
     }
-    # Not used, I got better results without the 4-week rolling average
-    # else if (current_week >= 6) {
-    #     
-    #     # Set initial value for stats calculated
-    #     current_away_off_rush_epa <- 0
-    #     current_away_off_pass_epa <- 0
-    #     current_away_first_downs_for <- 0
-    #     current_away_off_fdr <- 0
-    #     current_away_def_rush_epa <- 0
-    #     current_away_def_pass_epa <- 0
-    #     current_away_first_downs_allowed <- 0
-    #     current_away_def_fdr <- 0
-    #     current_away_giveaways <- 0
-    #     current_away_takeaways <- 0
-    #     current_away_off_exp_play_rate <- 0
-    #     current_away_def_exp_play_rate <- 0
-    #     current_away_total_penalties <- 0
-    #     current_away_total_penalty_yds <- 0
-    #     current_away_off_line_metric <- 0
-    #     current_away_def_line_metric <- 0
-    #     current_home_off_rush_epa <- 0
-    #     current_home_off_pass_epa <- 0
-    #     current_home_off_fdr <- 0
-    #     current_home_def_rush_epa <- 0
-    #     current_home_def_pass_epa <- 0
-    #     current_home_def_fdr <- 0
-    #     current_home_giveaways <- 0
-    #     current_home_takeaways <- 0
-    #     current_home_off_exp_play_rate <- 0
-    #     current_home_def_exp_play_rate <- 0
-    #     current_home_total_penalties <- 0
-    #     current_home_total_penalty_yds <- 0
-    #     current_home_off_line_metric <- 0
-    #     current_home_def_line_metric <- 0
-    #     total_away_off_plays <- 0
-    #     total_away_def_plays <- 0
-    #     total_home_off_plays <- 0
-    #     total_home_def_plays <- 0
-    #     
-    #     # Rolling week starts at 5 since we're using 3 week rolling averages for games
-    #     rolling_week_home <- as.integer(current_week - 4)
-    #     rolling_week_away <- as.integer(current_week - 4)
-    #     
-    #     # Get team stats using a rolling 4-week stat average
-    #     for (x in 1:4) {
-    #         
-    #         if (rolling_week_away == as.integer(bye_weeks_2020 %>% filter(team_abbr==current_away$away_team) %>% select(bye_week))) {
-    # 
-    #             rolling_week_away = current_week - 5
-    #             change_away_rolling_week = TRUE
-    #         
-    #         }
-    #         else {
-    #             change_away_rolling_week = FALSE
-    #         }
-    #         
-    #         if (rolling_week_home == as.integer(bye_weeks_2020 %>% filter(team_abbr==current_home$home_team) %>% select(bye_week))) {
-    # 
-    #                 rolling_week_home = current_week - 5
-    #                 change_home_rolling_week = TRUE
-    # 
-    #         }
-    #         else {
-    #             change_home_rolling_week = FALSE
-    #         }
-    #         ################### AWAY STATS ###################
-    #         # ----- GENERAL DATA POINTS FROM NFLFASTR ----- #
-    #         away_general_data <- current_pbp %>% filter(season==current_season, week==rolling_week_away, posteam==current_away$away_team) %>% select(posteam_type, div_game) %>% unique()
-    #         total_away_off_plays <- current_pbp %>% filter(season==current_season, week==rolling_week_away, posteam==current_away$away_team, play_type=="pass" | play_type=="run") %>% count()
-    #         total_away_def_plays <- current_pbp %>% filter(season==current_season, week==rolling_week_away, defteam==current_away$away_team, play_type=="pass" | play_type=="run") %>% count()
-    #         
-    #         # ----- OFFENSIVE EPA/GAME AND FIRST DOWN RATE----- #
-    #         current_away_off_rush_epa <- current_away_off_rush_epa + (current_pbp %>% filter(season==current_season, week==rolling_week_away, posteam==current_away$away_team, !is.na(epa), penalty==0, play_type=="run") %>% summarise(OFF_RUSH_EPA=mean(epa)))
-    #         current_away_off_pass_epa <- current_away_off_pass_epa + (current_pbp %>% filter(season==current_season, week==rolling_week_away, posteam==current_away$away_team, !is.na(epa), penalty==0, play_type=="pass") %>% summarise(OFF_PASS_EPA=mean(epa)))
-    #         current_away_first_downs_for <- current_pbp %>% filter(season==current_season, week==rolling_week_away, posteam==current_away$away_team, first_down==1, play_type=="pass" | play_type=="run") %>% count()
-    #         current_away_off_fdr <- current_away_off_fdr + (current_away_first_downs_for / total_away_off_plays)
-    #         
-    #         # ----- DEFENSIVE EPA/GAME AND FIRST DOWN RATE ----- #
-    #         current_away_def_rush_epa <- current_away_def_rush_epa + (current_pbp %>% filter(season==current_season, week==rolling_week_away, defteam==current_away$away_team, !is.na(epa), penalty==0, play_type=="run") %>% summarise(DEF_RUSH_EPA=mean(epa)))
-    #         current_away_def_pass_epa <- current_away_def_pass_epa + (current_pbp %>% filter(season==current_season, week==rolling_week_away, defteam==current_away$away_team, !is.na(epa), penalty==0, play_type=="pass") %>% summarise(DEF_PASS_EPA=mean(epa)))
-    #         current_away_first_downs_allowed <- current_pbp %>% filter(season==current_season, week==rolling_week_away, defteam==current_away$away_team, first_down==1, play_type=="pass" | play_type=="run") %>% count()
-    #         current_away_def_fdr <- current_away_def_fdr + (current_away_first_downs_allowed / total_away_def_plays)
-    #         
-    #         # ----- TURNOVER DATA ----- #
-    #         current_away_giveaways <- current_away_giveaways + (current_pbp %>% filter(season==current_season, week==rolling_week_away, posteam==current_away$away_team, fumble_lost==1 | interception==1) %>% count())
-    #         current_away_takeaways <- current_away_takeaways + (current_pbp %>% filter(season==current_season, week==rolling_week_away, defteam==current_away$away_team, fumble_lost==1 | interception==1) %>% count())
-    #         
-    #         # ----- EXPLOSIVE PLAY RATE ----- #
-    #         current_away_off_exp_plays <- current_pbp %>% filter(season==current_season, week==rolling_week_away, posteam==current_away$away_team, yards_gained>=15, interception==0 & fumble_lost==0, penalty==0, play_type=="pass" | play_type=="run") %>% count()
-    #         current_away_off_exp_play_rate <- current_away_off_exp_play_rate + (current_away_off_exp_plays / total_away_off_plays)
-    #         current_away_def_exp_plays <- current_pbp %>% filter(season==current_season, week==rolling_week_away, defteam==current_away$away_team, yards_gained>=15, interception==0 & fumble_lost==0, penalty==0, play_type=="pass" | play_type=="run") %>% count()
-    #         current_away_def_exp_play_rate <- current_away_def_exp_play_rate + (current_away_def_exp_plays / total_away_def_plays)
-    #         
-    #         # ----- PENALTIES & PENALTY YARDS ----- #
-    #         current_away_off_penalties <- current_pbp %>% filter(season==current_season, week==rolling_week_away, posteam==current_away$away_team, penalty==1 & penalty_team==current_away$away_team) %>% count()
-    #         current_away_off_penalty_yds <- current_pbp %>% filter(season==current_season, week==rolling_week_away, posteam==current_away$away_team, penalty==1 & penalty_team==current_away$away_team) %>% summarise(Off_Pen_Yds=sum(penalty_yards))
-    #         current_away_def_penalties <- current_pbp %>% filter(season==current_season, week==rolling_week_away, defteam==current_away$away_team, penalty==1 & penalty_team==current_away$away_team) %>% count()
-    #         current_away_def_penalty_yds <- current_pbp %>% filter(season==current_season, week==rolling_week_away, defteam==current_away$away_team, penalty==1 & penalty_team==current_away$away_team) %>% summarise(Def_Pen_Yds=sum(penalty_yards))
-    #         current_away_total_penalties <- current_away_total_penalties + (current_away_off_penalties + current_away_def_penalties)
-    #         current_away_total_penalty_yds <- current_away_total_penalty_yds + (current_away_off_penalty_yds + current_away_def_penalty_yds)
-    #         
-    #         # ----- QB HIT + SACK DIFFERENTIAL ----- #
-    #         # A positive value means the defense produces more QB Hits and Sacks than are allowed on offense
-    #         # This seems like a decent measure of offensive/defensive line play that can be inferred from the nflfastR data sets
-    #         current_away_off_line_metric <- current_away_off_line_metric + (current_pbp %>% filter(season==current_season, week==rolling_week_away, posteam==current_away$away_team, qb_hit==1 | sack==1) %>% count())
-    #         current_away_def_line_metric <- current_away_def_line_metric + (current_pbp %>% filter(season==current_season, week==rolling_week_away, defteam==current_away$away_team, qb_hit==1 | sack==1) %>% count())
-    #         
-    #         ################### HOME STATS ###################
-    #         # ----- GENERAL DATA POINTS FROM NFLFASTR ----- #
-    #         home_general_data <- current_pbp %>% filter(season==current_season, week==rolling_week_home, posteam==current_home$home_team) %>% select(posteam_type, div_game) %>% unique()
-    #         total_home_off_plays <- current_pbp %>% filter(season==current_season, week==rolling_week_home, posteam==current_home$home_team, play_type=="pass" | play_type=="run") %>% count()
-    #         total_home_def_plays <- current_pbp %>% filter(season==current_season, week==rolling_week_home, defteam==current_home$home_team, play_type=="pass" | play_type=="run") %>% count()
-    #         
-    #         # ----- OFFENSIVE EPA/GAME AND FIRST DOWN RATE----- #
-    #         current_home_off_rush_epa <- current_home_off_rush_epa + (current_pbp %>% filter(season==current_season, week==rolling_week_home, posteam==current_home$home_team, !is.na(epa), penalty==0, play_type=="run") %>% summarise(OFF_RUSH_EPA=mean(epa)))
-    #         current_home_off_pass_epa <- current_home_def_rush_epa + (current_pbp %>% filter(season==current_season, week==rolling_week_home, posteam==current_home$home_team, !is.na(epa), penalty==0, play_type=="pass") %>% summarise(OFF_PASS_EPA=mean(epa)))
-    #         current_home_first_downs_for <- current_pbp %>% filter(season==current_season, week==rolling_week_home, posteam==current_home$home_team, first_down==1, play_type=="pass" | play_type=="run") %>% count()
-    #         current_home_off_fdr <- current_home_off_fdr + (current_home_first_downs_for / total_home_off_plays)
-    #         
-    #         # ----- DEFENSIVE EPA/GAME AND FIRST DOWN RATE ----- #
-    #         current_home_def_rush_epa <- current_home_def_rush_epa + (current_pbp %>% filter(season==current_season, week==rolling_week_home, defteam==current_home$home_team, !is.na(epa), penalty==0, play_type=="run") %>% summarise(DEF_RUSH_EPA=mean(epa)))
-    #         current_home_def_pass_epa <- current_home_def_pass_epa + (current_pbp %>% filter(season==current_season, week==rolling_week_home, defteam==current_home$home_team, !is.na(epa), penalty==0, play_type=="pass") %>% summarise(DEF_PASS_EPA=mean(epa)))
-    #         current_home_first_downs_allowed <- current_pbp %>% filter(season==current_season, week==rolling_week_home, defteam==current_home$home_team, first_down==1, play_type=="pass" | play_type=="run") %>% count()
-    #         current_home_def_fdr <- current_home_def_fdr + (current_home_first_downs_allowed / total_home_def_plays)
-    #         
-    #         # ----- TURNOVER DATA ----- #
-    #         current_home_giveaways <- current_home_giveaways + (current_pbp %>% filter(season==current_season, week==rolling_week_home, posteam==current_home$home_team, fumble_lost==1 | interception==1) %>% count())
-    #         current_home_takeaways <- current_home_takeaways + (current_pbp %>% filter(season==current_season, week==rolling_week_home, defteam==current_home$home_team, fumble_lost==1 | interception==1) %>% count())
-    #         
-    #         # ----- EXPLOSIVE PLAY RATE ----- #
-    #         current_home_off_exp_plays <- current_pbp %>% filter(season==current_season, week==rolling_week_home, posteam==current_home$home_team, yards_gained>=15, interception==0 & fumble_lost==0, penalty==0, play_type=="pass" | play_type=="run") %>% count()
-    #         current_home_off_exp_play_rate <- current_home_off_exp_play_rate + (current_home_off_exp_plays / total_home_off_plays)
-    #         current_home_def_exp_plays <- current_pbp %>% filter(season==current_season, week==rolling_week_home, defteam==current_home$home_team, yards_gained>=15, interception==0 & fumble_lost==0, penalty==0, play_type=="pass" | play_type=="run") %>% count()
-    #         current_home_def_exp_play_rate <- current_home_def_exp_play_rate + (current_home_def_exp_plays / total_home_def_plays)
-    #         
-    #         # ----- PENALTIES & PENALTY YARDS ----- #
-    #         current_home_off_penalties <- current_pbp %>% filter(season==current_season, week==rolling_week_home, posteam==current_home$home_team, penalty==1 & penalty_team==current_home$home_team) %>% count()
-    #         current_home_off_penalty_yds <- current_pbp %>% filter(season==current_season, week==rolling_week_home, posteam==current_home$home_team, penalty==1 & penalty_team==current_home$home_team) %>% summarise(Off_Pen_Yds=sum(penalty_yards))
-    #         current_home_def_penalties <- current_pbp %>% filter(season==current_season, week==rolling_week_home, defteam==current_home$home_team, penalty==1 & penalty_team==current_home$home_team) %>% count()
-    #         current_home_def_penalty_yds <- current_pbp %>% filter(season==current_season, week==rolling_week_home, defteam==current_home$home_team, penalty==1 & penalty_team==current_home$home_team) %>% summarise(Def_Pen_Yds=sum(penalty_yards))
-    #         current_home_total_penalties <- current_home_total_penalties + (current_home_off_penalties + current_home_def_penalties)
-    #         current_home_total_penalty_yds <- current_home_total_penalty_yds + (current_home_off_penalty_yds + current_home_def_penalty_yds)
-    #         
-    #         # ----- QB HIT + SACK DIFFERENTIAL ----- #
-    #         # A positive value means the defense produces more QB Hits and Sacks than are allowed on offense
-    #         # This seems like a decent measure of offensive/defensive line play that can be inferred from the nflfastR data sets
-    #         current_home_off_line_metric <- current_home_off_line_metric + (current_pbp %>% filter(season==current_season, week==rolling_week_home, posteam==current_home$home_team, qb_hit==1 | sack==1) %>% count())
-    #         current_home_def_line_metric <- current_home_def_line_metric + (current_pbp %>% filter(season==current_season, week==rolling_week_home, defteam==current_home$home_team, qb_hit==1 | sack==1) %>% count())
-    #         
-    #         # Edit rolling weeks if needed and reset the boolean condition
-    #         if (change_away_rolling_week == TRUE) {
-    #             # subtracting the x index time -1 and adding one takes it back to the same index as the other 
-    #             rolling_week_away = (rolling_week_away - (x * -1)) + 1
-    #             change_away_rolling_week = FALSE
-    #         } else {
-    #             rolling_week_away = rolling_week_away + 1
-    #         }
-    #         
-    #         if (change_home_rolling_week == TRUE) {
-    #             # subtracting the x index time -1 and adding one takes it back to the same index as the other
-    #             rolling_week_home = (rolling_week_home - (x * -1)) + 1
-    #             change_home_rolling_week = FALSE
-    #         } else {
-    #             rolling_week_home = rolling_week_home + 1
-    #         }
-    #         
-    #         # Increment rolling week
-    #         #rolling_week_away = rolling_week_away + 1
-    #         #rolling_week_home = rolling_week_home + 1
-    #         
-    #     }
-    #     
-    #     # Divide data by 4 here to account for rolling average
-    #     # These stats will work out to averages for the last 3 games each team has played
-    #     # Make away data frame
-    #     current_away_data <- data.frame(
-    #         OFF_RUSH_EPA <- current_away_off_rush_epa$OFF_RUSH_EPA / 4,
-    #         OFF_PASS_EPA <- current_away_off_pass_epa$OFF_PASS_EPA / 4,
-    #         OFF_FDR <- current_away_off_fdr$n / 4,
-    #         DEF_RUSH_EPA <- current_away_def_rush_epa$DEF_RUSH_EPA / 4,
-    #         DEF_PASS_EPA <- current_away_def_pass_epa$DEF_PASS_EPA / 4,
-    #         DEF_FDR <- current_away_def_fdr$n / 4,
-    #         OFF_TO <- current_away_giveaways$n / 4,
-    #         DEF_TO <- current_away_takeaways$n / 4,
-    #         OFF_EXP_RATE <- current_away_off_exp_play_rate$n / 4,
-    #         DEF_EXP_RATE <- current_away_def_exp_play_rate$n / 4,
-    #         PENS <- current_away_total_penalties$n / 4,
-    #         PEN_YDS <- current_away_total_penalty_yds$Off_Pen_Yds / 4,
-    #         OL_METRIC <- current_away_off_line_metric$n / 4,
-    #         DL_METRIC <- current_away_def_line_metric$n / 4
-    #     )
-    #     
-    #     # Make home data frame
-    #     current_home_data <- data.frame(
-    #         OFF_RUSH_EPA <- current_home_off_rush_epa$OFF_RUSH_EPA / 4,
-    #         OFF_PASS_EPA <- current_home_def_pass_epa$DEF_PASS_EPA / 4,
-    #         OFF_FDR <- current_home_off_fdr$n / 4,
-    #         DEF_RUSH_EPA <- current_home_def_rush_epa$DEF_RUSH_EPA / 4,
-    #         DEF_PASS_EPA <- current_home_def_pass_epa$DEF_PASS_EPA / 4,
-    #         DEF_FDR <- current_home_def_fdr$n / 4,
-    #         OFF_TO <- current_home_giveaways$n / 4,
-    #         DEF_TO <- current_home_takeaways$n / 4,
-    #         OFF_EXP_RATE <- current_home_off_exp_play_rate$n / 4,
-    #         DEF_EXP_RATE <- current_home_def_exp_play_rate$n / 4,
-    #         PENS <- current_home_total_penalties$n / 4,
-    #         PEN_YDS <- current_home_total_penalty_yds$Off_Pen_Yds / 4,
-    #         OL_METRIC <- current_home_off_line_metric$n / 4,
-    #         DL_METRIC <- current_home_def_line_metric$n / 4,
-    #         DIV_GAME <- div_game
-    #     )
-    #     
-    # }
-    
+   
     # Append current_game_data to current_week_data
     # This includes all stats needed for predictions (29 data points, 14 per team, 1 for divisional game)
     current_game_data <- append(current_away_data, current_home_data)
@@ -637,6 +414,7 @@ remove(current_away)
 remove(current_home)
 if(current_week == 1) {
     remove(last_season)
+    remove(last_season_pbp)
 }
 # if (current_week >= 6){
 #     remove(rolling_week_away)
@@ -729,4 +507,7 @@ remove(HOME_WIN_COUNT)
 remove(WINNER)
 remove(to_write)
 remove(current_pbp)
-remove(last_season_pbp)
+remove(current_week_predictions)
+remove(current_week_data)
+remove(current_week_picks)
+remove(model_number)
