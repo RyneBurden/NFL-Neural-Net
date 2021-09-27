@@ -30,4 +30,4 @@ Tidyverse - used to clean data after being gathered
 Reticulate - used to interface R dataframes with the Python neural network  
 
 
-### **Twitter: @rjb_tech**
+### **Twitter: @BearlyAnalytics**
