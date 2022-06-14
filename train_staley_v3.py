@@ -83,6 +83,7 @@ def train_model(train_set, validation_set):
 
 
 def predict_games(bst, test_set):
+    # Shuffle set, isolate and drop labels
     test_set = test_set.sample(frac=1)
     test_labels = np.array(test_set["RESULT"].values.tolist())
     test_set = test_set.drop(["RESULT"], axis=1)
