@@ -4,5 +4,5 @@ numpy
 scikit-learn
 isort
 black
-pep8
+pycodestyle
 matplotlib
