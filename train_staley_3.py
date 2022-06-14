@@ -27,8 +27,8 @@ def main():
 
     staley = train_model(train_set=train_set, validation_set=validation_set)
 
-    xgb.plot_importance(staley, importance_type="gain")
-    pyplot.show()
+    # xgb.plot_importance(staley, importance_type="gain")
+    # pyplot.show()
 
     test_set = pd.read_csv("data/2021_season_games.csv")
     test_set["RESULT"] = test_set["PTS_DIFF"].apply(is_home_win)
