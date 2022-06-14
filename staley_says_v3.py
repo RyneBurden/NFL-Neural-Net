@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import xgboost as xgb
 
+
 def main():
 
     # Function to apply to dataframes
@@ -26,11 +27,22 @@ def main():
     test_set = test_set.drop(["RESULT", "id", "PTS_DIFF"], axis=1)
     dtest = xgb.DMatrix(test_set)
 
-    predictions_1 = models["staley_1"].predict(dtest, iteration_range=(0, models["staley_1"].best_iteration + 1))
-    predictions_2 = models["staley_2"].predict(dtest, iteration_range=(0, models["staley_2"].best_iteration + 1))
-    predictions_3 = models["staley_3"].predict(dtest, iteration_range=(0, models["staley_3"].best_iteration + 1))
-    predictions_4 = models["staley_4"].predict(dtest, iteration_range=(0, models["staley_4"].best_iteration + 1))
-    predictions_5 = models["staley_5"].predict(dtest, iteration_range=(0, models["staley_5"].best_iteration + 1))
+    predictions_1 = models["staley_1"].predict(
+        dtest, iteration_range=(0, models["staley_1"].best_iteration + 1)
+    )
+    predictions_2 = models["staley_2"].predict(
+        dtest, iteration_range=(0, models["staley_2"].best_iteration + 1)
+    )
+    predictions_3 = models["staley_3"].predict(
+        dtest, iteration_range=(0, models["staley_3"].best_iteration + 1)
+    )
+    predictions_4 = models["staley_4"].predict(
+        dtest, iteration_range=(0, models["staley_4"].best_iteration + 1)
+    )
+    predictions_5 = models["staley_5"].predict(
+        dtest, iteration_range=(0, models["staley_5"].best_iteration + 1)
+    )
+
 
 if __name__ == "__main__":
     main()
