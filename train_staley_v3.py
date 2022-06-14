@@ -1,13 +1,13 @@
-from cgi import test
-from matplotlib import pyplot
-import pandas as pd
 import numpy as np
+import pandas as pd
 import xgboost as xgb
+from matplotlib import pyplot
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
 
 def main():
+    # Function to apply to dataframes
     def is_home_win(entry) -> bool:
         return 0 if entry <= 0 else 1
 
