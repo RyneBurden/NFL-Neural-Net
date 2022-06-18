@@ -6,4 +6,4 @@ CREATE TABLE predictions
                             home_team   TEXT               ,
                             away_team   TEXT               ,
                             winner      VARCHAR(4)          -- This will be either 'home' or 'away'
-                        )
+                        );
