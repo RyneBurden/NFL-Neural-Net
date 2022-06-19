@@ -13,3 +13,11 @@ ENV POSTGRES_PASSWORD "staley_but_password"
 ENV POSTGRES_DB "staley"
 COPY ./init.sql .
 RUN mv ./init.sql /docker-entrypoint-initdb.d/init.sql
+
+FROM python:3.10-bullseye as api_server
+WORKDIR /staley
+ENV TZ "America/New_York"
+ENV POSTGRES_USER "staley"
+ENV POSTGRES_PASSWORD "staley_but_password"
+ENV POSTGRES_DB "staley"
+COPY ./api/api_requirements.txt .
