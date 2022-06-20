@@ -12,6 +12,7 @@ ENV POSTGRES_USER "staley"
 ENV POSTGRES_PASSWORD "staley_but_password"
 ENV POSTGRES_DB "staley"
 COPY ./init.sql .
+COPY ./data/teams_logos_colors.csv .
 RUN mv ./init.sql /docker-entrypoint-initdb.d/init.sql
 
 FROM python:3.10-bullseye as api_server
