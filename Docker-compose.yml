@@ -1,0 +1,23 @@
+version: '3.4'
+services:
+  database:
+    container_name: staley_database
+    restart: always
+    env_file: 
+      - .env
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: staley_database
+    ports:
+      - 5432:5432
+  model:
+    container_name: staley_model
+    depends_on:
+      - database
+    env_file:
+      - .env
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: model
