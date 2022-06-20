@@ -82,7 +82,7 @@ def train_model(train_set, validation_set):
 # print(f"PTS_DIFF std deviation: {raw_data[raw_data.columns[-1]].std()}")
 
 
-def predict_games(bst, test_set):
+def predict_games(bst: xgb.Booster, test_set: pd.DataFrame) -> None:
     # Shuffle set, isolate and drop labels
     test_set = test_set.sample(frac=1)
     test_labels = np.array(test_set["RESULT"].values.tolist())
