@@ -98,6 +98,7 @@ for(current_game in 1:nrow(games)) {
         
         # Make away data frame
         current_away_data <- data.frame(
+            AWAY_TEAM <- current_away,
             OFF_RUSH_EPA_AWAY <- current_away_off_rush_epa$OFF_RUSH_EPA,
             OFF_PASS_EPA_AWAY <- current_away_off_pass_epa$OFF_PASS_EPA,
             OFF_FDR_AWAY <- current_away_off_fdr$n,
@@ -159,6 +160,7 @@ for(current_game in 1:nrow(games)) {
         
         # Make home data frame
         current_home_data <- data.frame(
+            HOME_TEAM <- current_home,
             OFF_RUSH_EPA_HOME <- current_home_off_rush_epa$OFF_RUSH_EPA,
             OFF_PASS_EPA_HOME <- current_home_def_pass_epa$DEF_PASS_EPA,
             OFF_FDR_HOME <- current_home_off_fdr$n,
@@ -225,6 +227,7 @@ for(current_game in 1:nrow(games)) {
         
         # Make away data frame
         current_away_data <- data.frame(
+            AWAY_TEAM <- current_away,
             OFF_RUSH_EPA_AWAY <- current_away_off_rush_epa$OFF_RUSH_EPA / (current_week - 1),
             OFF_PASS_EPA_AWAY <- current_away_off_pass_epa$OFF_PASS_EPA / (current_week - 1),
             OFF_FDR_AWAY <- current_away_off_fdr$n / (current_week - 1),
@@ -285,6 +288,7 @@ for(current_game in 1:nrow(games)) {
         
         # Make home data frame
         current_home_data <- data.frame(
+            HOME_TEAM <- current_home,
             OFF_RUSH_EPA_HOME <- current_home_off_rush_epa$OFF_RUSH_EPA / (current_week - 1),
             OFF_PASS_EPA_HOME <- current_home_def_pass_epa$DEF_PASS_EPA / (current_week - 1),
             OFF_FDR_HOME <- current_home_off_fdr$n / (current_week - 1),
@@ -313,6 +317,7 @@ for(current_game in 1:nrow(games)) {
 
 # Set column names to be pretty
 colnames(current_week_data) <- c(
+    'away_team',
     'off_rush_epa_away',
     'off_pass_epa_away',
     'off_fdr_away',
@@ -327,6 +332,7 @@ colnames(current_week_data) <- c(
     'pen_yds_away',
     'ol_metric_away',
     'dl_metric_away',
+    'home_team',
     'off_rush_epa_home',
     'off_pass_epa_home',
     'off_fdr_home',
@@ -345,6 +351,13 @@ colnames(current_week_data) <- c(
 )
 
 write.csv(current_week_data, 'test.csv', row.names=FALSE)
+
+# reticulate::use_virtualenv("venv/")
+# reticulate::py_run_file("staley_says_v3.py")
+# # Predictions will be made here and saved to the DB
+# reticulate::py$predict_games(reticulate::r_to_py(current_week_data), current_season, current_week)
+
+# pass to staley_says_v3.py here and save predictions to db there
 
 # # Cycle through all models
 # for (model_number in 1:10) {
