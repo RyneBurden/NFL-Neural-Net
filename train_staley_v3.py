@@ -2,84 +2,173 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 from matplotlib import pyplot
+import joblib
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
+from sklearn.multioutput import MultiOutputRegressor
+from sklearn.preprocessing import LabelEncoder
+
+
+MAX_SCORE = 62
 
 
 def main():
-    # Function to apply to dataframes
-    def is_home_win(entry) -> bool:
-        return 0 if entry <= 0 else 1
+
+    scaler = StandardScaler()
 
     # Load CSV file
-    raw_data = pd.read_csv("data/raw_data.csv")
-    # Get absolute value for PTS_DIFF to get rid of outliers
-    raw_data["ABS_PTS_DIFF"] = abs(raw_data["PTS_DIFF"])
-    # Get rid of rows that have an ABS_PTS_DIFF of larger than 2 touchdowns
-    raw_data = raw_data[raw_data.ABS_PTS_DIFF <= 24]
-    # Make new column to show home wins
-    raw_data["RESULT"] = raw_data["PTS_DIFF"].apply(is_home_win)
+    training_data = pd.read_csv("data/training_data_with_points.csv").dropna(how="any")
 
-    # Drop created columns
-    raw_data = raw_data.drop(["PTS_DIFF", "ABS_PTS_DIFF", "id"], axis=1)
-    # Create testing and training sets
-    train_set, validation_set = train_test_split(raw_data)
+    # Split data into home and away datasets and then
+    training_data_away = training_data[
+        [
+            "AWAY_OFF_RUSH_EPA",
+            "AWAY_OFF_PASS_EPA",
+            "AWAY_OFF_FDR",
+            "AWAY_OFF_TO",
+            "AWAY_OFF_EXP_RATE",
+            "AWAY_OL_METRIC",
+            "AWAY_DEF_RUSH_EPA",
+            "AWAY_DEF_PASS_EPA",
+            "AWAY_DEF_FDR",
+            "AWAY_DEF_TO",
+            "AWAY_DEF_EXP_RATE",
+            "AWAY_DL_METRIC",
+            "AWAY_PTS",
+        ]
+    ].to_numpy()
 
-    staley = train_model(train_set=train_set, validation_set=validation_set)
+    training_data_home = training_data[
+        [
+            "HOME_OFF_RUSH_EPA",
+            "HOME_OFF_PASS_EPA",
+            "HOME_OFF_FDR",
+            "HOME_OFF_TO",
+            "HOME_OFF_EXP_RATE",
+            "HOME_OL_METRIC",
+            "HOME_DEF_RUSH_EPA",
+            "HOME_DEF_PASS_EPA",
+            "HOME_DEF_FDR",
+            "HOME_DEF_TO",
+            "HOME_DEF_EXP_RATE",
+            "HOME_DL_METRIC",
+            "HOME_PTS",
+        ]
+    ].to_numpy()
 
-    # xgb.plot_importance(staley, importance_type="gain")
-    # pyplot.show()
-
-    test_set = pd.read_csv("data/2021_season_games.csv")
-    test_set["RESULT"] = test_set["PTS_DIFF"].apply(is_home_win)
-    test_set = test_set.drop(["id", "PTS_DIFF"], axis=1)
-    predict_games(staley, test_set)
-
-    save_choice = input("Save this model? ")
-    if save_choice == "y" or save_choice == "yes":
-        model_filename = input("filename to save: ")
-        staley.save_model(f"models/{model_filename}.staley")
-
-
-def train_model(train_set, validation_set):
-    train_labels = train_set["RESULT"]
-    validation_labels = validation_set["RESULT"]
-
-    train_set = train_set.drop(["RESULT"], axis=1)
-    validation_set = validation_set.drop(["RESULT"], axis=1)
-    # test_set = test_set.drop(["RESULT"], axis=1)
-
-    dtrain = xgb.DMatrix(train_set, label=train_labels)
-    dvalid = xgb.DMatrix(validation_set, label=validation_labels)
-    param = {
-        "max_depth": 6,
-        "eta": 0.3,
-        "objective": "binary:logistic",
-        # "eval_metric": "error",
-        "subsample": 0.5,
-        "gamma": 0.5,
-        "num_parallel_tree": 500,
-        "tree_method": "approx",
-    }
-    num_round = 65
-    evallist = [(dvalid, "valid")]
-    bst = xgb.train(
-        param,
-        dtrain,
-        num_boost_round=num_round,
-        evals=evallist,
-        early_stopping_rounds=2,
+    training_data_stacked = np.concatenate(
+        (training_data_away, training_data_home), axis=0
     )
 
-    return bst
+    # Create testing and training sets
+    train_set_split, validation_set_split = train_test_split(training_data_stacked)
+
+    staley = train_model(train_set=train_set_split, validation_set=validation_set_split)
+
+    test_data = pd.read_csv("data/training_data_2021_with_points.csv")
+
+    # Split data into home and away datasets and then
+    test_data_away = test_data[
+        [
+            "AWAY_OFF_RUSH_EPA",
+            "AWAY_OFF_PASS_EPA",
+            "AWAY_OFF_FDR",
+            "AWAY_OFF_TO",
+            "AWAY_OFF_EXP_RATE",
+            "AWAY_OL_METRIC",
+            "AWAY_DEF_RUSH_EPA",
+            "AWAY_DEF_PASS_EPA",
+            "AWAY_DEF_FDR",
+            "AWAY_DEF_TO",
+            "AWAY_DEF_EXP_RATE",
+            "AWAY_DL_METRIC",
+            "AWAY_PTS",
+        ]
+    ].to_numpy(dtype=np.float64)
+
+    test_data_home = test_data[
+        [
+            "HOME_OFF_RUSH_EPA",
+            "HOME_OFF_PASS_EPA",
+            "HOME_OFF_FDR",
+            "HOME_OFF_TO",
+            "HOME_OFF_EXP_RATE",
+            "HOME_OL_METRIC",
+            "HOME_DEF_RUSH_EPA",
+            "HOME_DEF_PASS_EPA",
+            "HOME_DEF_FDR",
+            "HOME_DEF_TO",
+            "HOME_DEF_EXP_RATE",
+            "HOME_DL_METRIC",
+            "HOME_PTS",
+        ]
+    ].to_numpy(dtype=np.float64)
+
+    test_data_stacked = np.concatenate((test_data_away, test_data_home), axis=0)[:, :-1]
+    test_data_stacked_labels = np.concatenate((test_data_away, test_data_home), axis=0)[
+        :, -1
+    ]
+
+    test_data_scaled = scaler.fit_transform(test_data_stacked)
+
+    predictions = staley.predict(test_data_scaled)
+
+    correct_predictions = 0
+    index_modifier = test_data_away.shape[0]
+    for x in range(int(len(predictions) / 2)):
+
+        if (
+            test_data_stacked_labels[x] > test_data_stacked_labels[x + index_modifier]
+        ) and (np.argmax(predictions[x]) > np.argmax(predictions[x + index_modifier])):
+            correct_predictions += 1
+        if (
+            test_data_stacked_labels[x] < test_data_stacked_labels[x + index_modifier]
+        ) and (np.argmax(predictions[x]) < np.argmax(predictions[x + index_modifier])):
+            correct_predictions += 1
+
+    percent_correct_score = (
+        correct_predictions / (len(test_data_stacked_labels) / 2) * 100
+    )
+    print(f"{round(percent_correct_score, 2)}%")
+
+    to_save = input("Do you want to save this model? ")
+    if to_save == "y" or to_save == "yes":
+        model_name = input("Model name: ")
+        output_filepath = f"models/{model_name}.staley"
+        joblib.dump(staley, output_filepath)
 
 
-# Test metrics
-# print(raw_data[raw_data])
-# print(f"PTS_DIFF max: {raw_data[raw_data.columns[-1]].max()}")
-# print(f"PTS_DIFF mean: {raw_data[raw_data.columns[-1]].mean()}")
-# print(f"PTS_DIFF median: {raw_data[raw_data.columns[-1]].median()}")
-# print(f"PTS_DIFF std deviation: {raw_data[raw_data.columns[-1]].std()}")
+def train_model(train_set: np.ndarray, validation_set: np.ndarray):
+
+    scaler = StandardScaler()
+
+    train_labels = train_set[:, -1]
+    train_set = train_set[:, :-1]
+
+    train_set_scaled = scaler.fit_transform(train_set)
+
+    new_train_labels = np.zeros((train_labels.shape[0], MAX_SCORE))
+    for row_index in range(len(train_labels)):
+        current_label = int(train_labels[row_index] - 1)
+        new_train_labels[row_index][current_label] = 0.99
+
+    validation_labels = validation_set[:, -1]
+    validation_set = validation_set[:, :-1]
+
+    xgb_estimator = xgb.XGBRegressor(
+        objective="reg:logistic",
+        max_depth=12,
+        num_parallel_tree=10,
+        subsample=0.5,
+        gamma=0.3,
+        eta=0.000015,
+    )
+
+    multilabel_model = MultiOutputRegressor(xgb_estimator)
+
+    multilabel_model.fit(X=train_set_scaled, y=new_train_labels)
+
+    return multilabel_model
 
 
 def predict_games(bst: xgb.Booster, test_set: pd.DataFrame) -> None:
