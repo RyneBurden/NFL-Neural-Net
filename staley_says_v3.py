@@ -1,48 +1,90 @@
+import joblib
 import pandas as pd
 import numpy as np
 import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
 
 
-def main():
-
-    # Function to apply to dataframes
-    def is_home_win(entry) -> bool:
-        return 0 if entry <= 0 else 1
+def predict_games(test_set: pd.DataFrame, current_season: int, current_week: int):
 
     models = {}
+    models["staley_1"] = joblib.load("models/2022_1.staley")
 
-    # Load models
-    models["staley_1"] = xgb.Booster(model_file="models/001.staley")
-    models["staley_2"] = xgb.Booster(model_file="models/002.staley")
-    models["staley_3"] = xgb.Booster(model_file="models/003.staley")
-    models["staley_4"] = xgb.Booster(model_file="models/004.staley")
-    models["staley_5"] = xgb.Booster(model_file="models/005.staley")
+    scaler = StandardScaler(copy=False)
 
-    test_set = pd.read_csv("data/2021_season_games.csv")
-    test_set["RESULT"] = test_set["PTS_DIFF"].apply(is_home_win)
+    # Split data into home and away datasets and then
+    test_data_away = test_set[
+        [
+            "AWAY_OFF_RUSH_EPA",
+            "AWAY_OFF_PASS_EPA",
+            "AWAY_OFF_FDR",
+            "AWAY_OFF_TO",
+            "AWAY_OFF_EXP_RATE",
+            "AWAY_OL_METRIC",
+            "AWAY_DEF_RUSH_EPA",
+            "AWAY_DEF_PASS_EPA",
+            "AWAY_DEF_FDR",
+            "AWAY_DEF_TO",
+            "AWAY_DEF_EXP_RATE",
+            "AWAY_DL_METRIC",
+        ]
+    ].to_numpy(dtype=np.float64)
 
-    # Shuffle set, isolate and drop labels
-    test_set = test_set.sample(frac=1)
-    test_labels = np.array(test_set["RESULT"].values.tolist())
-    test_set = test_set.drop(["RESULT", "id", "PTS_DIFF"], axis=1)
-    dtest = xgb.DMatrix(test_set)
+    test_data_home = test_set[
+        [
+            "HOME_OFF_RUSH_EPA",
+            "HOME_OFF_PASS_EPA",
+            "HOME_OFF_FDR",
+            "HOME_OFF_TO",
+            "HOME_OFF_EXP_RATE",
+            "HOME_OL_METRIC",
+            "HOME_DEF_RUSH_EPA",
+            "HOME_DEF_PASS_EPA",
+            "HOME_DEF_FDR",
+            "HOME_DEF_TO",
+            "HOME_DEF_EXP_RATE",
+            "HOME_DL_METRIC",
+        ]
+    ].to_numpy(dtype=np.float64)
 
-    predictions_1 = models["staley_1"].predict(
-        dtest, iteration_range=(0, models["staley_1"].best_iteration + 1)
-    )
-    predictions_2 = models["staley_2"].predict(
-        dtest, iteration_range=(0, models["staley_2"].best_iteration + 1)
-    )
-    predictions_3 = models["staley_3"].predict(
-        dtest, iteration_range=(0, models["staley_3"].best_iteration + 1)
-    )
-    predictions_4 = models["staley_4"].predict(
-        dtest, iteration_range=(0, models["staley_4"].best_iteration + 1)
-    )
-    predictions_5 = models["staley_5"].predict(
-        dtest, iteration_range=(0, models["staley_5"].best_iteration + 1)
-    )
+    test_data_stacked = np.concatenate((test_data_away, test_data_home), axis=0)
+    test_data_scaled = scaler.fit_transform(test_data_stacked)
 
+    index_modifier = test_data_away.shape[0]
 
-if __name__ == "__main__":
-    main()
+    predictions = models["staley_1"].predict(test_data_scaled)
+
+    for x in range(test_set.shape[0]):
+        if np.argmax(predictions[x]) != np.argmax(predictions[x + index_modifier]):
+            if len(test_set.iloc[x]["AWAY_TEAM"]) == 2:
+                if np.argmax(predictions[x]) + 1 < 10:
+                    print(
+                        f"{test_set.iloc[x]['AWAY_TEAM']}  - {np.argmax(predictions[x]) + 1}  || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(predictions[x+index_modifier]) + 1}"
+                    )
+                else:
+                    print(
+                        f"{test_set.iloc[x]['AWAY_TEAM']}  - {np.argmax(predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(predictions[x+index_modifier]) + 1}"
+                    )
+            else:
+                if np.argmax(predictions[x]) + 1 < 10:
+                    print(
+                        f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(predictions[x]) + 1}  || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(predictions[x+index_modifier]) + 1}"
+                    )
+                else:
+                    print(
+                        f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(predictions[x+index_modifier]) + 1}"
+                    )
+        else:
+            max_away_prediction_index = np.argmax(predictions[x])
+            max_home_prediction_index = np.argmax(predictions[x + index_modifier])
+            if (
+                predictions[x][max_away_prediction_index]
+                > predictions[x + index_modifier][max_home_prediction_index]
+            ):
+                print(
+                    f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(predictions[x+index_modifier]) + 1} \t {test_set.iloc[x]['AWAY_TEAM']} has the edge"
+                )
+            else:
+                print(
+                    f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(predictions[x+index_modifier]) + 1} \t {test_set.iloc[x]['HOME_TEAM']} has the edge"
+                )
