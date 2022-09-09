@@ -53,7 +53,7 @@ current_week_data <- data.frame()
 predictions <- data.frame()
 current_week_predictions <- data.frame()
 current_week_picks <- data.frame(matrix(ncol = 7))
-rolling_week_modifier <- 4
+rolling_week_modifier <- 3
 
 # Sopranos reference
 writeLines("Bada bing I'm on it boss")
