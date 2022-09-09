@@ -16,7 +16,7 @@ def main():
     # Load CSV file
     training_data = pd.read_csv("data/training_data_with_points.csv").dropna(how="any")
     training_data = training_data.drop(
-        training_data[abs(training_data.HOME_PTS - training_data.AWAY_PTS) > 28].index
+        training_data[abs(training_data.HOME_PTS - training_data.AWAY_PTS) > 21].index
     )
 
     # Split data into home and away datasets and then
