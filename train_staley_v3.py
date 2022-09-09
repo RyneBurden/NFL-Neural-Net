@@ -112,6 +112,7 @@ def main():
     test_data_scaled = scaler.fit_transform(test_data_stacked)
 
     predictions = staley.predict(test_data_scaled)
+    print(predictions[0])
 
     correct_predictions = 0
     index_modifier = test_data_away.shape[0]
@@ -156,12 +157,12 @@ def train_model(train_set: np.ndarray, validation_set: np.ndarray):
     validation_set = validation_set[:, :-1]
 
     xgb_estimator = xgb.XGBRegressor(
-        objective="reg:logistic",
-        max_depth=12,
-        num_parallel_tree=10,
+        objective="reg:squaredlogerror",
+        # num_parallel_tree=5,
         subsample=0.5,
-        gamma=0.3,
-        eta=0.000015,
+        gamma=0.5,
+        eta=0.00001,
+        eval_metric="logloss",
     )
 
     multilabel_model = MultiOutputRegressor(xgb_estimator)
