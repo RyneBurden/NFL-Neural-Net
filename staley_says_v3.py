@@ -7,8 +7,14 @@ from sklearn.preprocessing import StandardScaler
 
 def predict_games(test_set: pd.DataFrame, current_season: int, current_week: int):
 
+    num_games = test_set.shape[0]
+
     models = {}
     models["staley_1"] = joblib.load("models/2022_1.staley")
+    models["staley_2"] = joblib.load("models/2022_2.staley")
+    models["staley_3"] = joblib.load("models/2022_3.staley")
+    models["staley_4"] = joblib.load("models/2022_4.staley")
+    models["staley_5"] = joblib.load("models/2022_5.staley")
 
     scaler = StandardScaler(copy=False)
 
@@ -52,7 +58,24 @@ def predict_games(test_set: pd.DataFrame, current_season: int, current_week: int
 
     index_modifier = test_data_away.shape[0]
 
-    predictions = models["staley_1"].predict(test_data_scaled)
+    predictions = {}
+    predictions[1] = models["staley_1"].predict(test_data_scaled)
+    predictions[2] = models["staley_2"].predict(test_data_scaled)
+    predictions[3] = models["staley_3"].predict(test_data_scaled)
+    predictions[4] = models["staley_4"].predict(test_data_scaled)
+    predictions[5] = models["staley_5"].predict(test_data_scaled)
+
+    # Combine and average predictions for each game
+    combined_predictions = np.concatenate(
+        [
+            predictions[1],
+            predictions[2],
+            predictions[3],
+            predictions[4],
+            predictions[5],
+        ],
+        axis=0,
+    )
 
     for x in range(test_set.shape[0]):
         if np.argmax(predictions[x]) != np.argmax(predictions[x + index_modifier]):
