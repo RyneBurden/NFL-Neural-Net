@@ -112,7 +112,6 @@ def main():
     test_data_scaled = scaler.fit_transform(test_data_stacked)
 
     predictions = staley.predict(test_data_scaled)
-    print(predictions[0])
 
     correct_predictions = 0
     index_modifier = test_data_away.shape[0]
