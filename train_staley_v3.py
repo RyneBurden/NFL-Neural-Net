@@ -9,15 +9,15 @@ from sklearn.multioutput import MultiOutputRegressor
 from sklearn.preprocessing import LabelEncoder
 
 
-MAX_SCORE = 62
-
-
 def main():
 
     scaler = StandardScaler()
 
     # Load CSV file
     training_data = pd.read_csv("data/training_data_with_points.csv").dropna(how="any")
+    training_data = training_data.drop(
+        training_data[abs(training_data.HOME_PTS - training_data.AWAY_PTS) > 28].index
+    )
 
     # Split data into home and away datasets and then
     training_data_away = training_data[
@@ -60,10 +60,18 @@ def main():
         (training_data_away, training_data_home), axis=0
     )
 
+    # Get most points scored and set MAX_SCORE constant equal to
+    pts = training_data_stacked[:, -1]
+    MAX_SCORE = int(np.amax(pts))
+
     # Create testing and training sets
     train_set_split, validation_set_split = train_test_split(training_data_stacked)
 
-    staley = train_model(train_set=train_set_split, validation_set=validation_set_split)
+    staley = train_model(
+        train_set=train_set_split,
+        validation_set=validation_set_split,
+        max_score=MAX_SCORE,
+    )
 
     test_data = pd.read_csv("data/training_data_2021_with_points.csv")
 
@@ -138,7 +146,7 @@ def main():
         joblib.dump(staley, output_filepath)
 
 
-def train_model(train_set: np.ndarray, validation_set: np.ndarray):
+def train_model(train_set: np.ndarray, validation_set: np.ndarray, max_score: int):
 
     scaler = StandardScaler()
 
@@ -147,9 +155,13 @@ def train_model(train_set: np.ndarray, validation_set: np.ndarray):
 
     train_set_scaled = scaler.fit_transform(train_set)
 
-    new_train_labels = np.zeros((train_labels.shape[0], MAX_SCORE))
+    new_train_labels = np.zeros((train_labels.shape[0], max_score))
     for row_index in range(len(train_labels)):
-        current_label = int(train_labels[row_index] - 1)
+        current_label = (
+            int(train_labels[row_index] - 1)
+            if (int(train_labels[row_index]) - 1 < max_score)
+            else max_score - 1
+        )
         new_train_labels[row_index][current_label] = 0.99
 
     validation_labels = validation_set[:, -1]
