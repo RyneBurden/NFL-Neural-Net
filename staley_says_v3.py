@@ -65,49 +65,51 @@ def predict_games(test_set: pd.DataFrame, current_season: int, current_week: int
     predictions[4] = models["staley_4"].predict(test_data_scaled)
     predictions[5] = models["staley_5"].predict(test_data_scaled)
 
-    # Combine and average predictions for each game
-    combined_predictions = np.concatenate(
-        [
-            predictions[1],
-            predictions[2],
-            predictions[3],
-            predictions[4],
-            predictions[5],
-        ],
-        axis=0,
-    )
+    avg_predictions = np.zeros_like(predictions[1], dtype=np.float64)
 
-    for x in range(test_set.shape[0]):
-        if np.argmax(predictions[x]) != np.argmax(predictions[x + index_modifier]):
+    # The predictions for each game need to be averaged together and added to a numpy array
+    # With the same shape as the stacked array
+    for game_index in range(predictions[1].shape[0]):
+        for column_index in range(predictions[1].shape[1]):
+            for model_index in range(1, 6):
+                current_model = predictions[model_index]
+                avg_predictions[game_index][column_index] += current_model[game_index][
+                    column_index
+                ]
+
+    for x in range(int(test_set.shape[0])):
+        if np.argmax(avg_predictions[x]) != np.argmax(
+            avg_predictions[x + index_modifier]
+        ):
             if len(test_set.iloc[x]["AWAY_TEAM"]) == 2:
-                if np.argmax(predictions[x]) + 1 < 10:
+                if np.argmax(avg_predictions[x]) + 1 < 10:
                     print(
-                        f"{test_set.iloc[x]['AWAY_TEAM']}  - {np.argmax(predictions[x]) + 1}  || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(predictions[x+index_modifier]) + 1}"
+                        f"{test_set.iloc[x]['AWAY_TEAM']}  - {np.argmax(avg_predictions[x]) + 1}  || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(avg_predictions[x+index_modifier]) + 1}"
                     )
                 else:
                     print(
-                        f"{test_set.iloc[x]['AWAY_TEAM']}  - {np.argmax(predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(predictions[x+index_modifier]) + 1}"
+                        f"{test_set.iloc[x]['AWAY_TEAM']}  - {np.argmax(avg_predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(avg_predictions[x+index_modifier]) + 1}"
                     )
             else:
-                if np.argmax(predictions[x]) + 1 < 10:
+                if np.argmax(avg_predictions[x]) + 1 < 10:
                     print(
-                        f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(predictions[x]) + 1}  || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(predictions[x+index_modifier]) + 1}"
+                        f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(avg_predictions[x]) + 1}  || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(avg_predictions[x+index_modifier]) + 1}"
                     )
                 else:
                     print(
-                        f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(predictions[x+index_modifier]) + 1}"
+                        f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(avg_predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(avg_predictions[x+index_modifier]) + 1}"
                     )
         else:
-            max_away_prediction_index = np.argmax(predictions[x])
-            max_home_prediction_index = np.argmax(predictions[x + index_modifier])
+            max_away_prediction_index = np.argmax(avg_predictions[x])
+            max_home_prediction_index = np.argmax(avg_predictions[x + index_modifier])
             if (
-                predictions[x][max_away_prediction_index]
-                > predictions[x + index_modifier][max_home_prediction_index]
+                avg_predictions[x][max_away_prediction_index]
+                > avg_predictions[x + index_modifier][max_home_prediction_index]
             ):
                 print(
-                    f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(predictions[x+index_modifier]) + 1} \t {test_set.iloc[x]['AWAY_TEAM']} has the edge"
+                    f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(avg_predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(avg_predictions[x+index_modifier]) + 1} \t {test_set.iloc[x]['AWAY_TEAM']} has the edge"
                 )
             else:
                 print(
-                    f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(predictions[x+index_modifier]) + 1} \t {test_set.iloc[x]['HOME_TEAM']} has the edge"
+                    f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(avg_predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(avg_predictions[x+index_modifier]) + 1} \t {test_set.iloc[x]['HOME_TEAM']} has the edge"
                 )
