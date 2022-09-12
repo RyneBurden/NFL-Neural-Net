@@ -1,35 +1,35 @@
 # Load packages
 if (!require("dplyr")) {
-    install.packages("dplyr", repos = "http://cran.us.r-project.org")
-    library("dplyr")
+    install.packages("dplyr", repos = "http://cran.us.r-project.org", verbose = FALSE)
+    library("dplyr", verbose = FALSE)
 }
 if (!require("tibble")) {
-    install.packages("tibble", repos = "http://cran.us.r-project.org")
-    library("tibble")
+    install.packages("tibble", repos = "http://cran.us.r-project.org", verbose = FALSE)
+    library("tibble", verbose = FALSE)
 }
 if (!require("qs")) {
-    install.packages("qs", repos = "http://cran.us.r-project.org")
-    library("qs")
+    install.packages("qs", repos = "http://cran.us.r-project.org", verbose = FALSE)
+    library("qs", verbose = FALSE)
 }
 if (!require("reticulate")) {
-    install.packages("reticulate", repos = "http://cran.us.r-project.org")
-    library("reticulate")
+    install.packages("reticulate", repos = "http://cran.us.r-project.org", verbose = FALSE)
+    library("reticulate", verbose = FALSE)
 }
 if (!require("magrittr")) {
-    install.packages("magrittr", repos = "http://cran.us.r-project.org")
-    library("magrittr")
+    install.packages("magrittr", repos = "http://cran.us.r-project.org", verbose = FALSE)
+    library("magrittr", verbose = FALSE)
 }
 if (!require("glue")) {
-    install.packages("glue", repos = "http://cran.us.r-project.org")
-    library("glue")
+    install.packages("glue", repos = "http://cran.us.r-project.org", verbose = FALSE)
+    library("glue", verbose = FALSE)
 }
 if (!require("nflfastR")) {
-    install.packages("nflfastR", repos = "http://cran.us.r-project.org")
-    library("nflfastR")
+    install.packages("nflfastR", repos = "http://cran.us.r-project.org", verbose = FALSE)
+    library("nflfastR", verbose = FALSE)
 }
 if (!require("nflreadr")) {
-    install.packages("nflreadr", repos = "http://cran.us.r-project.org")
-    library("nflreadr")
+    install.packages("nflreadr", repos = "http://cran.us.r-project.org", verbose = FALSE)
+    library("nflreadr", verbose = FALSE)
 }
 
 
@@ -42,6 +42,7 @@ if (!require("nflreadr")) {
 args <- commandArgs(trailingOnly = TRUE)
 current_season <- args[1]
 current_week <- args[2]
+validation_mode <- as.logical(args[3])
 current_week <- as.integer(current_week)
 current_season <- as.integer(current_season)
 
@@ -685,16 +686,24 @@ colnames(current_week_data) <- c(
     "HOME_PEN_YDS",
     "HOME_OL_METRIC",
     "HOME_DL_METRIC",
-    "DIV_GAME"
+    "DIV"
 )
+
+# Make this part of a "verify" mode and send to verify_staley_v3.py
+nfl_schedule_filtered <- nfl_schedule_whole %>% filter(week == current_week)
 
 # Uncomment this line to debug the data going to the model
 # write.csv(current_week_data, 'test.csv', row.names=FALSE)
 
 # venv for dev purposes
 reticulate::use_virtualenv("venv/")
-reticulate::py_run_file("staley_says_v3.py")
 # reticulate::source_python("staley_says_v3.py")
 # Predictions will be made here and saved to the DB
 # predict_games(test_set = reticulate::r_to_py(current_week_data), current_seaso = current_season, current_week = current_week)
-reticulate::py$predict_games(reticulate::r_to_py(current_week_data), current_season, current_week)
+if (!is.na(validation_mode)) {
+    reticulate::py_run_file("test_staley.py")
+    reticulate::py$predict_games(reticulate::r_to_py(current_week_data), current_season, current_week, nfl_schedule_filtered)
+} else {
+    reticulate::py_run_file("staley_says_v3.py")
+    reticulate::py$predict_games(reticulate::r_to_py(current_week_data), current_season, current_week)
+}
