@@ -19,6 +19,10 @@ def main():
         training_data[abs(training_data.HOME_PTS - training_data.AWAY_PTS) > 21].index
     )
 
+    training_data = training_data.drop(
+        training_data[training_data.HOME_PTS == training_data.AWAY_PTS].index
+    )
+
     # Split data into home and away datasets and then
     training_data_away = training_data[
         [
@@ -34,6 +38,7 @@ def main():
             "AWAY_DEF_TO",
             "AWAY_DEF_EXP_RATE",
             "AWAY_DL_METRIC",
+            "DIV",
             "AWAY_PTS",
         ]
     ].to_numpy()
@@ -52,6 +57,7 @@ def main():
             "HOME_DEF_TO",
             "HOME_DEF_EXP_RATE",
             "HOME_DL_METRIC",
+            "DIV",
             "HOME_PTS",
         ]
     ].to_numpy()
@@ -90,6 +96,7 @@ def main():
             "AWAY_DEF_TO",
             "AWAY_DEF_EXP_RATE",
             "AWAY_DL_METRIC",
+            "DIV",
             "AWAY_PTS",
         ]
     ].to_numpy(dtype=np.float64)
@@ -108,6 +115,7 @@ def main():
             "HOME_DEF_TO",
             "HOME_DEF_EXP_RATE",
             "HOME_DL_METRIC",
+            "DIV",
             "HOME_PTS",
         ]
     ].to_numpy(dtype=np.float64)
@@ -168,12 +176,10 @@ def train_model(train_set: np.ndarray, validation_set: np.ndarray, max_score: in
     validation_set = validation_set[:, :-1]
 
     xgb_estimator = xgb.XGBRegressor(
-        objective="reg:squaredlogerror",
-        # num_parallel_tree=5,
-        subsample=0.5,
-        gamma=0.5,
-        eta=0.00001,
-        eval_metric="logloss",
+        num_parallel_tree=610,
+        # subsample=0.95,
+        gamma=0.1,
+        eta=0.0095,
     )
 
     multilabel_model = MultiOutputRegressor(xgb_estimator)
