@@ -5,9 +5,25 @@ import xgboost as xgb
 from sklearn.preprocessing import StandardScaler
 
 
-def predict_games(test_set: pd.DataFrame, current_season: int, current_week: int):
+def get_winner(row) -> str:
+    away_score = row[1]
+    home_score = row[3]
 
-    num_games = test_set.shape[0]
+    if away_score > home_score:
+        return "away"
+    elif home_score > away_score:
+        return "home"
+    else:
+        return "tie"
+
+
+def predict_games(
+    input_test_set: pd.DataFrame,
+    current_season: int,
+    current_week: int,
+):
+
+    num_games = input_test_set.shape[0]
 
     models = {}
     models["staley_1"] = joblib.load("models/2022_1.staley")
@@ -16,10 +32,12 @@ def predict_games(test_set: pd.DataFrame, current_season: int, current_week: int
     models["staley_4"] = joblib.load("models/2022_4.staley")
     models["staley_5"] = joblib.load("models/2022_5.staley")
 
+    num_models = len(models.keys())
+
     scaler = StandardScaler(copy=False)
 
     # Split data into home and away datasets and then
-    test_data_away = test_set[
+    test_data_away = input_test_set[
         [
             "AWAY_OFF_RUSH_EPA",
             "AWAY_OFF_PASS_EPA",
@@ -33,10 +51,11 @@ def predict_games(test_set: pd.DataFrame, current_season: int, current_week: int
             "AWAY_DEF_TO",
             "AWAY_DEF_EXP_RATE",
             "AWAY_DL_METRIC",
+            "DIV",
         ]
-    ].to_numpy(dtype=np.float64)
+    ]
 
-    test_data_home = test_set[
+    test_data_home = input_test_set[
         [
             "HOME_OFF_RUSH_EPA",
             "HOME_OFF_PASS_EPA",
@@ -50,10 +69,17 @@ def predict_games(test_set: pd.DataFrame, current_season: int, current_week: int
             "HOME_DEF_TO",
             "HOME_DEF_EXP_RATE",
             "HOME_DL_METRIC",
+            "DIV",
         ]
-    ].to_numpy(dtype=np.float64)
+    ]
 
-    test_data_stacked = np.concatenate((test_data_away, test_data_home), axis=0)
+    test_data_stacked = np.concatenate(
+        (
+            test_data_away.to_numpy(dtype=np.float64),
+            test_data_home.to_numpy(dtype=np.float64),
+        ),
+        axis=0,
+    )
     test_data_scaled = scaler.fit_transform(test_data_stacked)
 
     index_modifier = test_data_away.shape[0]
@@ -71,45 +97,123 @@ def predict_games(test_set: pd.DataFrame, current_season: int, current_week: int
     # With the same shape as the stacked array
     for game_index in range(predictions[1].shape[0]):
         for column_index in range(predictions[1].shape[1]):
-            for model_index in range(1, 6):
+            for model_index in range(1, num_models + 1):
                 current_model = predictions[model_index]
                 avg_predictions[game_index][column_index] += current_model[game_index][
                     column_index
                 ]
 
-    for x in range(int(test_set.shape[0])):
-        if np.argmax(avg_predictions[x]) != np.argmax(
+    formatted_predictions = []
+    for x in range(num_games):
+        away_team_win_pred = np.argmax(avg_predictions[x]) > np.argmax(
             avg_predictions[x + index_modifier]
-        ):
-            if len(test_set.iloc[x]["AWAY_TEAM"]) == 2:
-                if np.argmax(avg_predictions[x]) + 1 < 10:
-                    print(
-                        f"{test_set.iloc[x]['AWAY_TEAM']}  - {np.argmax(avg_predictions[x]) + 1}  || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(avg_predictions[x+index_modifier]) + 1}"
-                    )
-                else:
-                    print(
-                        f"{test_set.iloc[x]['AWAY_TEAM']}  - {np.argmax(avg_predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(avg_predictions[x+index_modifier]) + 1}"
-                    )
-            else:
-                if np.argmax(avg_predictions[x]) + 1 < 10:
-                    print(
-                        f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(avg_predictions[x]) + 1}  || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(avg_predictions[x+index_modifier]) + 1}"
-                    )
-                else:
-                    print(
-                        f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(avg_predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(avg_predictions[x+index_modifier]) + 1}"
-                    )
-        else:
-            max_away_prediction_index = np.argmax(avg_predictions[x])
-            max_home_prediction_index = np.argmax(avg_predictions[x + index_modifier])
-            if (
-                avg_predictions[x][max_away_prediction_index]
-                > avg_predictions[x + index_modifier][max_home_prediction_index]
-            ):
-                print(
-                    f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(avg_predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(avg_predictions[x+index_modifier]) + 1} \t {test_set.iloc[x]['AWAY_TEAM']} has the edge"
-                )
-            else:
-                print(
-                    f"{test_set.iloc[x]['AWAY_TEAM']} - {np.argmax(avg_predictions[x]) + 1} || {test_set.iloc[x]['HOME_TEAM']} - {np.argmax(avg_predictions[x+index_modifier]) + 1} \t {test_set.iloc[x]['HOME_TEAM']} has the edge"
-                )
+        )
+
+        home_team_win_pred = np.argmax(avg_predictions[x]) < np.argmax(
+            avg_predictions[x + index_modifier]
+        )
+
+        tie_pred = np.argmax(avg_predictions[x]) == np.argmax(
+            avg_predictions[x + index_modifier]
+        )
+
+        away_index = np.argmax(avg_predictions[x])
+        home_index = np.argmax(avg_predictions[x + index_modifier])
+        current_away = input_test_set.iloc[x]["AWAY_TEAM"]
+        current_home = input_test_set.iloc[x]["HOME_TEAM"]
+        away_edge = avg_predictions[x][away_index]
+        home_edge = avg_predictions[x][home_index]
+
+        formatted_predictions.append(
+            {
+                "away": f"{current_away}",
+                "away_score": away_index + 1,
+                "home": f"{current_home}",
+                "home_score": home_index + 1,
+                "edge": ""
+                if not tie_pred
+                else get_game_edge(
+                    away_team=current_away,
+                    away_edge=away_edge,
+                    home_team=current_home,
+                    home_edge=home_edge,
+                    data=input_test_set[input_test_set["AWAY_TEAM"] == current_away],
+                ),
+            }
+        )
+
+    prediction_viewer = pd.DataFrame.from_dict(formatted_predictions)
+    print(prediction_viewer)
+
+
+def get_game_edge(
+    away_team: str,
+    home_team: str,
+    away_edge: float,
+    home_edge: float,
+    data: pd.DataFrame,
+) -> str:
+    equal_edge = away_edge == home_edge
+    data_copy = data.copy(deep=True)
+
+    # Negative EPA is good for defense, so we need it to count positively towards the aggregate
+    flip_sign = lambda x: x * -1
+    data_copy[
+        [
+            "AWAY_DEF_RUSH_EPA",
+            "AWAY_DEF_PASS_EPA",
+            "HOME_DEF_RUSH_EPA",
+            "HOME_DEF_PASS_EPA",
+        ]
+    ] = data_copy[
+        [
+            "AWAY_DEF_RUSH_EPA",
+            "AWAY_DEF_PASS_EPA",
+            "HOME_DEF_RUSH_EPA",
+            "HOME_DEF_PASS_EPA",
+        ]
+    ].apply(
+        flip_sign
+    )
+
+    # Calculate home and away aggregates
+    away_aggregate = (
+        data_copy[
+            [
+                "AWAY_OFF_FDR",
+                "AWAY_OFF_RUSH_EPA",
+                "AWAY_OFF_PASS_EPA",
+                "AWAY_OFF_EXP_RATE",
+                "AWAY_DEF_FDR",
+                "AWAY_DEF_RUSH_EPA",
+                "AWAY_DEF_PASS_EPA",
+                "AWAY_DEF_EXP_RATE",
+            ]
+        ]
+        .sum(axis=1)
+        .to_numpy()
+        .item()
+    )
+
+    home_aggregate = (
+        data_copy[
+            [
+                "HOME_OFF_FDR",
+                "HOME_OFF_RUSH_EPA",
+                "HOME_OFF_PASS_EPA",
+                "HOME_OFF_EXP_RATE",
+                "HOME_DEF_FDR",
+                "HOME_DEF_RUSH_EPA",
+                "HOME_DEF_PASS_EPA",
+                "HOME_DEF_EXP_RATE",
+            ]
+        ]
+        .sum(axis=1)
+        .to_numpy()
+        .item()
+    )
+
+    if equal_edge:
+        return away_team if away_aggregate > home_aggregate else home_team
+
+    return away_team if away_edge > home_edge else home_team
