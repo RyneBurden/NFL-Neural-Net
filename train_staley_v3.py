@@ -176,7 +176,7 @@ def train_model(train_set: np.ndarray, validation_set: np.ndarray, max_score: in
     validation_set = validation_set[:, :-1]
 
     xgb_estimator = xgb.XGBRegressor(
-        num_parallel_tree=610,
+        num_parallel_tree=987,
         # subsample=0.95,
         gamma=0.1,
         eta=0.0095,
