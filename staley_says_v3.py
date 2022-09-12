@@ -5,16 +5,77 @@ import xgboost as xgb
 from sklearn.preprocessing import StandardScaler
 
 
-def get_winner(row) -> str:
-    away_score = row[1]
-    home_score = row[3]
+def get_game_edge(
+    away_team: str,
+    home_team: str,
+    away_edge: float,
+    home_edge: float,
+    data: pd.DataFrame,
+) -> str:
+    equal_edge = away_edge == home_edge
+    data_copy = data.copy(deep=True)
 
-    if away_score > home_score:
-        return "away"
-    elif home_score > away_score:
-        return "home"
-    else:
-        return "tie"
+    # Negative EPA is good for defense, so we need it to count positively towards the aggregate
+    flip_sign = lambda x: x * -1
+    data_copy[
+        [
+            "AWAY_DEF_RUSH_EPA",
+            "AWAY_DEF_PASS_EPA",
+            "HOME_DEF_RUSH_EPA",
+            "HOME_DEF_PASS_EPA",
+        ]
+    ] = data_copy[
+        [
+            "AWAY_DEF_RUSH_EPA",
+            "AWAY_DEF_PASS_EPA",
+            "HOME_DEF_RUSH_EPA",
+            "HOME_DEF_PASS_EPA",
+        ]
+    ].apply(
+        flip_sign
+    )
+
+    # Calculate home and away aggregates
+    away_aggregate = (
+        data_copy[
+            [
+                "AWAY_OFF_FDR",
+                "AWAY_OFF_RUSH_EPA",
+                "AWAY_OFF_PASS_EPA",
+                "AWAY_OFF_EXP_RATE",
+                "AWAY_DEF_FDR",
+                "AWAY_DEF_RUSH_EPA",
+                "AWAY_DEF_PASS_EPA",
+                "AWAY_DEF_EXP_RATE",
+            ]
+        ]
+        .sum(axis=1)
+        .to_numpy()
+        .item()
+    )
+
+    home_aggregate = (
+        data_copy[
+            [
+                "HOME_OFF_FDR",
+                "HOME_OFF_RUSH_EPA",
+                "HOME_OFF_PASS_EPA",
+                "HOME_OFF_EXP_RATE",
+                "HOME_DEF_FDR",
+                "HOME_DEF_RUSH_EPA",
+                "HOME_DEF_PASS_EPA",
+                "HOME_DEF_EXP_RATE",
+            ]
+        ]
+        .sum(axis=1)
+        .to_numpy()
+        .item()
+    )
+
+    if equal_edge:
+        return away_team if away_aggregate > home_aggregate else home_team
+
+    return away_team if away_edge > home_edge else home_team
 
 
 def predict_games(
@@ -144,76 +205,3 @@ def predict_games(
 
     prediction_viewer = pd.DataFrame.from_dict(formatted_predictions)
     print(prediction_viewer)
-
-
-def get_game_edge(
-    away_team: str,
-    home_team: str,
-    away_edge: float,
-    home_edge: float,
-    data: pd.DataFrame,
-) -> str:
-    equal_edge = away_edge == home_edge
-    data_copy = data.copy(deep=True)
-
-    # Negative EPA is good for defense, so we need it to count positively towards the aggregate
-    flip_sign = lambda x: x * -1
-    data_copy[
-        [
-            "AWAY_DEF_RUSH_EPA",
-            "AWAY_DEF_PASS_EPA",
-            "HOME_DEF_RUSH_EPA",
-            "HOME_DEF_PASS_EPA",
-        ]
-    ] = data_copy[
-        [
-            "AWAY_DEF_RUSH_EPA",
-            "AWAY_DEF_PASS_EPA",
-            "HOME_DEF_RUSH_EPA",
-            "HOME_DEF_PASS_EPA",
-        ]
-    ].apply(
-        flip_sign
-    )
-
-    # Calculate home and away aggregates
-    away_aggregate = (
-        data_copy[
-            [
-                "AWAY_OFF_FDR",
-                "AWAY_OFF_RUSH_EPA",
-                "AWAY_OFF_PASS_EPA",
-                "AWAY_OFF_EXP_RATE",
-                "AWAY_DEF_FDR",
-                "AWAY_DEF_RUSH_EPA",
-                "AWAY_DEF_PASS_EPA",
-                "AWAY_DEF_EXP_RATE",
-            ]
-        ]
-        .sum(axis=1)
-        .to_numpy()
-        .item()
-    )
-
-    home_aggregate = (
-        data_copy[
-            [
-                "HOME_OFF_FDR",
-                "HOME_OFF_RUSH_EPA",
-                "HOME_OFF_PASS_EPA",
-                "HOME_OFF_EXP_RATE",
-                "HOME_DEF_FDR",
-                "HOME_DEF_RUSH_EPA",
-                "HOME_DEF_PASS_EPA",
-                "HOME_DEF_EXP_RATE",
-            ]
-        ]
-        .sum(axis=1)
-        .to_numpy()
-        .item()
-    )
-
-    if equal_edge:
-        return away_team if away_aggregate > home_aggregate else home_team
-
-    return away_team if away_edge > home_edge else home_team
