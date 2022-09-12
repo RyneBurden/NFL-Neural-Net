@@ -1,12 +1,11 @@
+import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
 from matplotlib import pyplot
-import joblib
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from sklearn.multioutput import MultiOutputRegressor
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 
 def main():
