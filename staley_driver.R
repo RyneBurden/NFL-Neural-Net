@@ -50,6 +50,7 @@ current_season <- as.integer(current_season)
 nfl_schedule_whole <- nflreadr::load_schedules(as.integer(current_season))
 nfl_schedule <- nfl_schedule_whole[, c("season", "week", "away_team", "home_team", "div_game")]
 games <- nfl_schedule %>% filter(week == current_week, season == current_season)
+num_games <- nrow(games)
 current_week_data <- data.frame()
 predictions <- data.frame()
 current_week_predictions <- data.frame()
@@ -60,7 +61,7 @@ rolling_week_modifier <- 3
 writeLines("Bada bing I'm on it boss")
 
 # Loop through all games to make data frames
-for (current_game in 1:nrow(games)) {
+for (current_game in seq_len(num_games)) {
 
     # Get the current home and away teams
     current_away <- games[current_game, ] %>% select(away_team)
