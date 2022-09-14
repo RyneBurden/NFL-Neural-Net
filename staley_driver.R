@@ -121,8 +121,8 @@ for (current_game in seq_len(num_games)) {
         current_away_def_fdr <- current_away_first_downs_allowed / total_away_def_plays
 
         # ----- TURNOVER DATA ----- #
-        current_away_giveaways <- (current_pbp %>% filter(season == last_season, week <= 18, posteam == current_away$away_team, fumble_lost == 1 | interception == 1) %>% count()) / 17
-        current_away_takeaways <- (current_pbp %>% filter(season == last_season, week <= 18, defteam == current_away$away_team, fumble_lost == 1 | interception == 1) %>% count()) / 17
+        current_away_giveaways <- (current_pbp %>% filter(season == last_season, week <= 18, posteam == current_away$away_team, fumble_lost == 1 | interception == 1) %>% count()) / 18
+        current_away_takeaways <- (current_pbp %>% filter(season == last_season, week <= 18, defteam == current_away$away_team, fumble_lost == 1 | interception == 1) %>% count()) / 18
 
         # ----- EXPLOSIVE PLAY RATE ----- #
         current_away_off_exp_plays <- current_pbp %>%
@@ -147,14 +147,14 @@ for (current_game in seq_len(num_games)) {
         current_away_def_penalty_yds <- current_pbp %>%
             filter(season == last_season, week <= 18, defteam == current_away$away_team, penalty == 1 & penalty_team == current_away$away_team) %>%
             summarise(Def_Pen_Yds = sum(penalty_yards))
-        current_away_total_penalties <- (current_away_off_penalties + current_away_def_penalties) / 17
-        current_away_total_penalty_yds <- (current_away_off_penalty_yds + current_away_def_penalty_yds) / 17
+        current_away_total_penalties <- (current_away_off_penalties + current_away_def_penalties) / 18
+        current_away_total_penalty_yds <- (current_away_off_penalty_yds + current_away_def_penalty_yds) / 18
 
         # ----- QB HIT + SACK DIFFERENTIAL ----- #
         # A positive value means the defense produces more QB Hits and Sacks than are allowed on offense
         # This seems like a decent measure of offensive/defensive line play that can be inferred from the nflfastR data sets
-        current_away_off_line_metric <- (current_pbp %>% filter(season == last_season, week <= 18, posteam == current_away$away_team, qb_hit == 1 | sack == 1) %>% count()) / 17
-        current_away_def_line_metric <- (current_pbp %>% filter(season == last_season, week <= 18, defteam == current_away$away_team, qb_hit == 1 | sack == 1) %>% count()) / 17
+        current_away_off_line_metric <- (current_pbp %>% filter(season == last_season, week <= 18, posteam == current_away$away_team, qb_hit == 1 | sack == 1) %>% count()) / 18
+        current_away_def_line_metric <- (current_pbp %>% filter(season == last_season, week <= 18, defteam == current_away$away_team, qb_hit == 1 | sack == 1) %>% count()) / 18
 
         # Make away data frame
         current_away_data <- data.frame(
@@ -214,8 +214,8 @@ for (current_game in seq_len(num_games)) {
         current_home_def_fdr <- current_home_first_downs_allowed / total_home_def_plays
 
         # ----- TURNOVER DATA ----- #
-        current_home_giveaways <- (current_pbp %>% filter(season == last_season, week <= 18, posteam == current_home$home_team, fumble_lost == 1 | interception == 1) %>% count()) / 17
-        current_home_takeaways <- (current_pbp %>% filter(season == last_season, week <= 18, defteam == current_home$home_team, fumble_lost == 1 | interception == 1) %>% count()) / 17
+        current_home_giveaways <- (current_pbp %>% filter(season == last_season, week <= 18, posteam == current_home$home_team, fumble_lost == 1 | interception == 1) %>% count()) / 18
+        current_home_takeaways <- (current_pbp %>% filter(season == last_season, week <= 18, defteam == current_home$home_team, fumble_lost == 1 | interception == 1) %>% count()) / 18
 
         # ----- EXPLOSIVE PLAY RATE ----- #
         current_home_off_exp_plays <- current_pbp %>%
@@ -240,14 +240,14 @@ for (current_game in seq_len(num_games)) {
         current_home_def_penalty_yds <- current_pbp %>%
             filter(season == last_season, week <= 18, defteam == current_home$home_team, penalty == 1 & penalty_team == current_home$home_team) %>%
             summarise(Def_Pen_Yds = sum(penalty_yards))
-        current_home_total_penalties <- (current_home_off_penalties + current_home_def_penalties) / 17
-        current_home_total_penalty_yds <- (current_home_off_penalty_yds + current_home_def_penalty_yds) / 17
+        current_home_total_penalties <- (current_home_off_penalties + current_home_def_penalties) / 18
+        current_home_total_penalty_yds <- (current_home_off_penalty_yds + current_home_def_penalty_yds) / 18
 
         # ----- QB HIT + SACK DIFFERENTIAL ----- #
         # A positive value means the defense produces more QB Hits and Sacks than are allowed on offense
         # This seems like a decent measure of offensive/defensive line play that can be inferred from the nflfastR data sets
-        current_home_off_line_metric <- (current_pbp %>% filter(season == last_season, week <= 18, posteam == current_home$home_team, qb_hit == 1 | sack == 1) %>% count()) / 17
-        current_home_def_line_metric <- (current_pbp %>% filter(season == last_season, week <= 18, defteam == current_home$home_team, qb_hit == 1 | sack == 1) %>% count()) / 17
+        current_home_off_line_metric <- (current_pbp %>% filter(season == last_season, week <= 18, posteam == current_home$home_team, qb_hit == 1 | sack == 1) %>% count()) / 18
+        current_home_def_line_metric <- (current_pbp %>% filter(season == last_season, week <= 18, defteam == current_home$home_team, qb_hit == 1 | sack == 1) %>% count()) / 18
 
         # Make home data frame
         current_home_data <- data.frame(
