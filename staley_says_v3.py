@@ -1,4 +1,6 @@
+import os
 import joblib
+import gspread
 import numpy as np
 import pandas as pd
 import xgboost as xgb
@@ -187,9 +189,9 @@ def predict_games(
 
         formatted_predictions.append(
             {
-                "away": f"{current_away}",
+                "away_team": f"{current_away}",
                 "away_score": away_index + 1,
-                "home": f"{current_home}",
+                "home_team": f"{current_home}",
                 "home_score": home_index + 1,
                 "edge": ""
                 if not tie_pred
@@ -204,4 +206,17 @@ def predict_games(
         )
 
     prediction_viewer = pd.DataFrame.from_dict(formatted_predictions)
+    to_save = input("Do you want to save to G Drive? ")
+    if to_save == "yes" or to_save == "y":
+        send_to_gdrive(current_week, prediction_viewer)
     print(prediction_viewer)
+
+
+def send_to_gdrive(week_num: int, data: pd.DataFrame):
+    gc = gspread.service_account()
+
+    main_sheet = gc.open_by_url(os.environ["SHEET_URL"])
+
+    worksheet = main_sheet.worksheet(f"Week {week_num}")
+
+    worksheet.update([data.columns.values.tolist()] + data.values.tolist())
