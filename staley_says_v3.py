@@ -1,9 +1,13 @@
 import os
-import joblib
+
 import gspread
+import joblib
 import numpy as np
 import pandas as pd
+from dotenv import load_dotenv
 from sklearn.preprocessing import StandardScaler
+
+load_dotenv()
 
 
 def get_game_edge(
@@ -214,7 +218,7 @@ def predict_games(
 def send_to_gdrive(week_num: int, data: pd.DataFrame):
     gc = gspread.service_account()
 
-    main_sheet = gc.open_by_url(os.environ["SHEET_URL"])
+    main_sheet = gc.open_by_url(os.getenv("SHEET_URL"))
 
     worksheet = main_sheet.worksheet(f"Week {week_num}")
 
