@@ -10,10 +10,10 @@ class PredictionCounter:
     incorrect = 0
     ties = 0
 
-    def increment_correct(self, row):
+    def increment_correct(self):
         self.correct += 1
 
-    def increment_incorrect(self, row):
+    def increment_incorrect(self):
         self.incorrect += 1
 
     def increment_ties(self):
@@ -140,35 +140,43 @@ def predict_games(
 
         away_index = np.argmax(avg_predictions[x])
         home_index = np.argmax(avg_predictions[x + index_modifier])
+        current_away = test_set.iloc[x]["AWAY_TEAM"]
+        current_home = test_set.iloc[x]["HOME_TEAM"]
         away_edge = avg_predictions[x][away_index] > avg_predictions[x][home_index]
         home_edge = avg_predictions[x][away_index] < avg_predictions[x][home_index]
-
-        # print(avg_predictions[x][away_index])
-        # print(avg_predictions[x][home_index])
-        # print()
 
         correct_winner = get_winner(validation_set[x, :])
         match correct_winner:
             case "home":
                 if home_team_win_pred:
-                    counter.increment_correct(validation_set[x, :])
+                    counter.increment_correct()
                 elif away_team_win_pred:
-                    counter.increment_incorrect(validation_set[x, :])
+                    counter.increment_incorrect()
                 elif tie_pred:
-                    if home_edge:
-                        counter.increment_correct(validation_set[x, :])
+                    calculated_edge = get_game_edge(
+                        away_edge=away_edge,
+                        home_edge=home_edge,
+                        data=test_set[test_set["AWAY_TEAM"] == current_away],
+                    )
+                    if calculated_edge == "home":
+                        counter.increment_correct()
                     else:
-                        counter.increment_incorrect(validation_set[x, :])
+                        counter.increment_incorrect()
             case "away":
                 if home_team_win_pred:
-                    counter.increment_incorrect(validation_set[x, :])
+                    counter.increment_incorrect()
                 elif away_team_win_pred:
-                    counter.increment_correct(validation_set[x, :])
+                    counter.increment_correct()
                 elif tie_pred:
-                    if away_edge:
-                        counter.increment_correct(validation_set[x, :])
+                    calculated_edge = get_game_edge(
+                        away_edge=away_edge,
+                        home_edge=home_edge,
+                        data=test_set[test_set["AWAY_TEAM"] == current_away],
+                    )
+                    if calculated_edge == "away":
+                        counter.increment_correct()
                     else:
-                        counter.increment_incorrect(validation_set[x, :])
+                        counter.increment_incorrect()
             case "tie":
                 counter.increment_ties()
 
@@ -178,3 +186,73 @@ def predict_games(
         {counter.correct} - {counter.incorrect} - {counter.ties} ({(counter.correct / (counter.correct + counter.incorrect)) * 100}%)\
         \n"
     )
+
+
+def get_game_edge(
+    away_edge: float,
+    home_edge: float,
+    data: pd.DataFrame,
+) -> str:
+    equal_edge = away_edge == home_edge
+    data_copy = data.copy(deep=True)
+
+    # Negative EPA is good for defense, so we need it to count positively towards the aggregate
+    flip_sign = lambda x: x * -1
+    data_copy[
+        [
+            "AWAY_DEF_RUSH_EPA",
+            "AWAY_DEF_PASS_EPA",
+            "HOME_DEF_RUSH_EPA",
+            "HOME_DEF_PASS_EPA",
+        ]
+    ] = data_copy[
+        [
+            "AWAY_DEF_RUSH_EPA",
+            "AWAY_DEF_PASS_EPA",
+            "HOME_DEF_RUSH_EPA",
+            "HOME_DEF_PASS_EPA",
+        ]
+    ].apply(
+        flip_sign
+    )
+
+    # Calculate home and away aggregates
+    away_aggregate = (
+        data_copy[
+            [
+                "AWAY_OFF_FDR",
+                "AWAY_OFF_RUSH_EPA",
+                "AWAY_OFF_PASS_EPA",
+                "AWAY_OFF_EXP_RATE",
+                "AWAY_DEF_FDR",
+                "AWAY_DEF_RUSH_EPA",
+                "AWAY_DEF_PASS_EPA",
+                "AWAY_DEF_EXP_RATE",
+            ]
+        ]
+        .sum(axis=1)
+        .to_numpy()
+    )
+
+    home_aggregate = (
+        data_copy[
+            [
+                "HOME_OFF_FDR",
+                "HOME_OFF_RUSH_EPA",
+                "HOME_OFF_PASS_EPA",
+                "HOME_OFF_EXP_RATE",
+                "HOME_DEF_FDR",
+                "HOME_DEF_RUSH_EPA",
+                "HOME_DEF_PASS_EPA",
+                "HOME_DEF_EXP_RATE",
+            ]
+        ]
+        .sum(axis=1)
+        .to_numpy()
+        .item()
+    )
+
+    if equal_edge:
+        return "away" if away_aggregate > home_aggregate else "home"
+
+    return "away" if away_edge > home_edge else "home"
