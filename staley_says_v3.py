@@ -3,7 +3,6 @@ import joblib
 import gspread
 import numpy as np
 import pandas as pd
-import xgboost as xgb
 from sklearn.preprocessing import StandardScaler
 
 
