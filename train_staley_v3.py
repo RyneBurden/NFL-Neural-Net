@@ -7,6 +7,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
+NUM_TREES = 233
+
 
 def main():
 
@@ -15,7 +17,7 @@ def main():
     # Load CSV file
     training_data = pd.read_csv("data/training_data_with_points.csv").dropna(how="any")
     training_data = training_data.drop(
-        training_data[abs(training_data.HOME_PTS - training_data.AWAY_PTS) > 21].index
+        training_data[abs(training_data.HOME_PTS - training_data.AWAY_PTS) > 24].index
     )
 
     training_data = training_data.drop(
@@ -31,12 +33,12 @@ def main():
             "AWAY_OFF_TO",
             "AWAY_OFF_EXP_RATE",
             "AWAY_OL_METRIC",
-            "AWAY_DEF_RUSH_EPA",
-            "AWAY_DEF_PASS_EPA",
-            "AWAY_DEF_FDR",
-            "AWAY_DEF_TO",
-            "AWAY_DEF_EXP_RATE",
-            "AWAY_DL_METRIC",
+            "HOME_DEF_RUSH_EPA",
+            "HOME_DEF_PASS_EPA",
+            "HOME_DEF_FDR",
+            "HOME_DEF_TO",
+            "HOME_DEF_EXP_RATE",
+            "HOME_DL_METRIC",
             "DIV",
             "AWAY_PTS",
         ]
@@ -50,12 +52,12 @@ def main():
             "HOME_OFF_TO",
             "HOME_OFF_EXP_RATE",
             "HOME_OL_METRIC",
-            "HOME_DEF_RUSH_EPA",
-            "HOME_DEF_PASS_EPA",
-            "HOME_DEF_FDR",
-            "HOME_DEF_TO",
-            "HOME_DEF_EXP_RATE",
-            "HOME_DL_METRIC",
+            "AWAY_DEF_RUSH_EPA",
+            "AWAY_DEF_PASS_EPA",
+            "AWAY_DEF_FDR",
+            "AWAY_DEF_TO",
+            "AWAY_DEF_EXP_RATE",
+            "AWAY_DL_METRIC",
             "DIV",
             "HOME_PTS",
         ]
@@ -89,12 +91,12 @@ def main():
             "AWAY_OFF_TO",
             "AWAY_OFF_EXP_RATE",
             "AWAY_OL_METRIC",
-            "AWAY_DEF_RUSH_EPA",
-            "AWAY_DEF_PASS_EPA",
-            "AWAY_DEF_FDR",
-            "AWAY_DEF_TO",
-            "AWAY_DEF_EXP_RATE",
-            "AWAY_DL_METRIC",
+            "HOME_DEF_RUSH_EPA",
+            "HOME_DEF_PASS_EPA",
+            "HOME_DEF_FDR",
+            "HOME_DEF_TO",
+            "HOME_DEF_EXP_RATE",
+            "HOME_DL_METRIC",
             "DIV",
             "AWAY_PTS",
         ]
@@ -108,12 +110,12 @@ def main():
             "HOME_OFF_TO",
             "HOME_OFF_EXP_RATE",
             "HOME_OL_METRIC",
-            "HOME_DEF_RUSH_EPA",
-            "HOME_DEF_PASS_EPA",
-            "HOME_DEF_FDR",
-            "HOME_DEF_TO",
-            "HOME_DEF_EXP_RATE",
-            "HOME_DL_METRIC",
+            "AWAY_DEF_RUSH_EPA",
+            "AWAY_DEF_PASS_EPA",
+            "AWAY_DEF_FDR",
+            "AWAY_DEF_TO",
+            "AWAY_DEF_EXP_RATE",
+            "AWAY_DL_METRIC",
             "DIV",
             "HOME_PTS",
         ]
@@ -175,7 +177,7 @@ def train_model(train_set: np.ndarray, validation_set: np.ndarray, max_score: in
     validation_set = validation_set[:, :-1]
 
     xgb_estimator = xgb.XGBRegressor(
-        num_parallel_tree=987,
+        num_parallel_tree=NUM_TREES,
         # subsample=0.95,
         gamma=0.1,
         eta=0.0095,
