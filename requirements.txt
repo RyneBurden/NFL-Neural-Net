@@ -6,3 +6,4 @@ isort
 black
 pycodestyle
 python-dotenv
+gspread
