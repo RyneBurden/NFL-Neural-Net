@@ -93,10 +93,10 @@ def predict_games(
 
     models = {}
     models["staley_1"] = joblib.load("models/2022_1_new.staley")
-    # models["staley_2"] = joblib.load("models/2022_2.staley")
-    # models["staley_3"] = joblib.load("models/2022_3.staley")
-    # models["staley_4"] = joblib.load("models/2022_4.staley")
-    # models["staley_5"] = joblib.load("models/2022_5.staley")
+    models["staley_2"] = joblib.load("models/2022_2_new.staley")
+    models["staley_3"] = joblib.load("models/2022_3_new.staley")
+    models["staley_4"] = joblib.load("models/2022_4_new.staley")
+    models["staley_5"] = joblib.load("models/2022_5_new.staley")
 
     num_models = len(models.keys())
 
@@ -152,10 +152,10 @@ def predict_games(
 
     predictions = {}
     predictions[1] = models["staley_1"].predict(test_data_scaled)
-    # predictions[2] = models["staley_2"].predict(test_data_scaled)
-    # predictions[3] = models["staley_3"].predict(test_data_scaled)
-    # predictions[4] = models["staley_4"].predict(test_data_scaled)
-    # predictions[5] = models["staley_5"].predict(test_data_scaled)
+    predictions[2] = models["staley_2"].predict(test_data_scaled)
+    predictions[3] = models["staley_3"].predict(test_data_scaled)
+    predictions[4] = models["staley_4"].predict(test_data_scaled)
+    predictions[5] = models["staley_5"].predict(test_data_scaled)
 
     avg_predictions = np.zeros_like(predictions[1], dtype=np.float64)
 

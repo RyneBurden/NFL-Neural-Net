@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-NUM_TREES = 233
+NUM_TREES = 987
 
 
 def main():

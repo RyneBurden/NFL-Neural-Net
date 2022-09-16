@@ -46,11 +46,11 @@ def predict_games(
     ].to_numpy()
 
     models = {}
-    models["staley_1"] = joblib.load("models/2022_1.staley")
-    models["staley_2"] = joblib.load("models/2022_2.staley")
-    models["staley_3"] = joblib.load("models/2022_3.staley")
-    models["staley_4"] = joblib.load("models/2022_4.staley")
-    models["staley_5"] = joblib.load("models/2022_5.staley")
+    models["staley_1"] = joblib.load("models/2022_1_new.staley")
+    models["staley_2"] = joblib.load("models/2022_2_new.staley")
+    models["staley_3"] = joblib.load("models/2022_3_new.staley")
+    models["staley_4"] = joblib.load("models/2022_4_new.staley")
+    models["staley_5"] = joblib.load("models/2022_5_new.staley")
 
     num_models = len(models.keys())
 
